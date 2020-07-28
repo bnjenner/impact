@@ -1,0 +1,44 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/bnjenner/Center/work/CORE/thesis/program/impact/main.cpp
+iostream
+-
+chrono
+-
+seqan/arg_parse.h
+-
+utils/alignments.h
+/home/bnjenner/Center/work/CORE/thesis/program/impact/utils/alignments.h
+utils/count.h
+/home/bnjenner/Center/work/CORE/thesis/program/impact/utils/count.h
+
+/home/bnjenner/Center/work/CORE/thesis/program/impact/utils/alignments.h
+seqan/bam_io.h
+-
+vector
+-
+math.h
+-
+peaks.h
+/home/bnjenner/Center/work/CORE/thesis/program/impact/utils/peaks.h
+
+/home/bnjenner/Center/work/CORE/thesis/program/impact/utils/count.h
+seqan/gff_io.h
+-
+string
+-
+vector
+-
+
+/home/bnjenner/Center/work/CORE/thesis/program/impact/utils/peaks.h
+armadillo
+-
+fstream
+-
+
