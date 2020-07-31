@@ -148,7 +148,9 @@ class AlignmentFile {
 		    int num_alignments = 0;
 		    int align_end;
 
+
 			while (inFile.GetNextAlignment(alignment)) {
+
 
 		        // Break if not mapped, past reference id, or end of file.
 		        if (alignment.RefID > rID || alignment.Position >= endPos) {
@@ -156,7 +158,7 @@ class AlignmentFile {
 		        }
 
 		        // Check Strandedness
-		        if ((!alignment.IsReverseStrand() && strand != '-') || (alignment.IsReverseStrand() && strand == '-')) {
+		        if ((alignment.IsReverseStrand() && strand != '-') || (!alignment.IsReverseStrand() && strand == '-')) {
 		        	continue;
 		        }
 		     
@@ -181,7 +183,7 @@ class AlignmentFile {
 		    }
 
 
-		    if (peak_detection && num_alignments > 10) {
+		    if (peak_detection && num_alignments > 5) {
 		   		 mappedCounts.fit(max_components); 
 		    }
 

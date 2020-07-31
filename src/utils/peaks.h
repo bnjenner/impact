@@ -29,7 +29,6 @@ class MappingCounts {
     		counts.set_size(1, length);
     		counts.zeros();
 
-    		//std::cerr << "Interval: " << start << "-" << stop
 		} 
 
     // Methods

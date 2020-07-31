@@ -20,6 +20,7 @@ void getCounts(CharString gff_file, AlignmentFile &alignment, bool peak_detectio
 
     CharString feature_name = "";
     CharString contig;
+    char strand;
     int num_alignments = 0;
     int i = 0;
     int start;
@@ -29,14 +30,17 @@ void getCounts(CharString gff_file, AlignmentFile &alignment, bool peak_detectio
 
         readRecord(record, gffIn);
 
+
         if (feature_name != record.tagValues[0]) {
 
         	if (feature_name != "") {
 
+
         		MappingCounts mappedCounts(feature_name, start, stop);
 
+
         		num_alignments += alignment.findAlignments(mappedCounts, toCString(contig), start, 
-       													   stop, record.strand);
+       													   stop, strand);
 
 
         		std::cout << feature_name << ": " << num_alignments << std::endl; 
@@ -46,6 +50,7 @@ void getCounts(CharString gff_file, AlignmentFile &alignment, bool peak_detectio
         	num_alignments = 0;
         	feature_name = record.tagValues[0];
         	contig = record.ref;
+        	strand = record.strand;
         	start = record.beginPos;
         	stop = record.endPos;
 
