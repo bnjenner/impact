@@ -1,5 +1,5 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/impact.dir/main.cpp.o"
+  "CMakeFiles/impact.dir/src/impact.cpp.o"
   "impact"
   "impact.pdb"
 )

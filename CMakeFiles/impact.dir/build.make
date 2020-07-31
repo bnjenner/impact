@@ -76,30 +76,33 @@ include CMakeFiles/impact.dir/progress.make
 # Include the compile flags for this target's objects.
 include CMakeFiles/impact.dir/flags.make
 
-CMakeFiles/impact.dir/main.cpp.o: CMakeFiles/impact.dir/flags.make
-CMakeFiles/impact.dir/main.cpp.o: main.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/bnjenner/Center/work/CORE/thesis/program/impact/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/impact.dir/main.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/impact.dir/main.cpp.o -c /home/bnjenner/Center/work/CORE/thesis/program/impact/main.cpp
+CMakeFiles/impact.dir/src/impact.cpp.o: CMakeFiles/impact.dir/flags.make
+CMakeFiles/impact.dir/src/impact.cpp.o: src/impact.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/bnjenner/Center/work/CORE/thesis/program/impact/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/impact.dir/src/impact.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/impact.dir/src/impact.cpp.o -c /home/bnjenner/Center/work/CORE/thesis/program/impact/src/impact.cpp
 
-CMakeFiles/impact.dir/main.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/impact.dir/main.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/bnjenner/Center/work/CORE/thesis/program/impact/main.cpp > CMakeFiles/impact.dir/main.cpp.i
+CMakeFiles/impact.dir/src/impact.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/impact.dir/src/impact.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/bnjenner/Center/work/CORE/thesis/program/impact/src/impact.cpp > CMakeFiles/impact.dir/src/impact.cpp.i
 
-CMakeFiles/impact.dir/main.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/impact.dir/main.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/bnjenner/Center/work/CORE/thesis/program/impact/main.cpp -o CMakeFiles/impact.dir/main.cpp.s
+CMakeFiles/impact.dir/src/impact.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/impact.dir/src/impact.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/bnjenner/Center/work/CORE/thesis/program/impact/src/impact.cpp -o CMakeFiles/impact.dir/src/impact.cpp.s
 
 # Object files for target impact
 impact_OBJECTS = \
-"CMakeFiles/impact.dir/main.cpp.o"
+"CMakeFiles/impact.dir/src/impact.cpp.o"
 
 # External object files for target impact
 impact_EXTERNAL_OBJECTS =
 
-impact: CMakeFiles/impact.dir/main.cpp.o
+impact: CMakeFiles/impact.dir/src/impact.cpp.o
 impact: CMakeFiles/impact.dir/build.make
 impact: /usr/lib/x86_64-linux-gnu/libz.so
 impact: /usr/lib/libarmadillo.so
+impact: /usr/lib/x86_64-linux-gnu/libz.so
+impact: lib/bamtools/src/api/libbamtools.a
+impact: /usr/lib/x86_64-linux-gnu/libz.so
 impact: CMakeFiles/impact.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/bnjenner/Center/work/CORE/thesis/program/impact/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable impact"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/impact.dir/link.txt --verbose=$(VERBOSE)

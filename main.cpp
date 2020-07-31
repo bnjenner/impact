@@ -1,5 +1,6 @@
 #include <iostream>
 #include <chrono> 
+#include <string>
 #include <seqan/arg_parse.h>
 #include "utils/peaks.h"
 #include "utils/alignments.h"
@@ -10,9 +11,9 @@ using namespace seqan;
 // Argument Data Structure
 struct ImpactArguments
 { 
-    CharString alignment_file;    		// sam or bam file
-    CharString index_file;    			// index file
-    CharString gff_file;      			// gff file
+    std::string alignment_file;    	// sam or bam file
+    std::string index_file;    			// index file
+    std::string gff_file;      			// gff file
     bool nonunique_alignments;			// count primary and secondary alignments
     int mapq_min;						// minimum mapq score
     bool peak_detection; 				// enable peak detection 
@@ -144,7 +145,7 @@ int main(int argc, char const ** argv) {
     std::cerr << "--------------\n";
     std::cerr << "Counting Reads\n";
 
-   	getCounts(args.gff_file, alignment, args.peak_detection);
+   	//getCounts(args.gff_file, alignment, args.peak_detection);
    	
    	
    	auto stop = std::chrono::high_resolution_clock::now(); 
