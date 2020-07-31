@@ -1,5 +1,6 @@
-#include <armadillo>
 #include <fstream>
+#include <armadillo>
+#include <math.h>
 
 using namespace arma;
 
@@ -77,6 +78,46 @@ class MappingCounts {
 			out_file.close();	
 
     	}
+
+    	void fit(int max_components) {
+
+    		std::vector<double> bic_scores;
+    		bool status;
+    		double likelihood;
+    		double min_bic = 10000000; // arbitrarily large number
+    		double bic;
+    		int best_k;
+    		mat mean;
+
+    		gmm_diag model;
+
+    		for (int k = 1; k <= max_components; k++ ) {
+
+    			status = model.learn(counts, k, eucl_dist, random_subset, 10, 5, 1e-10, false);
+				likelihood = model.sum_log_p(counts);
+				bic = likelihood - (2.5 * log(length)); // L - (1/2) p log(n)
+
+				if (min_bic > bic) {
+					min_bic = bic;
+					best_k = k;
+					mean = model.means;
+				}
+
+    		}
+
+    		if (best_k > 1) {
+
+	    		std::cerr << "------\nName: " << feature_name << "\n";
+	    		std::cerr << "Mean : " << mean.at(0,0);
+	    		for (int i = 1; i < mean.n_cols; i++) {
+	    			std::cerr << "\t" << mean.at(0,i);
+				}
+				std::cerr << "\n";
+				std::cerr << "K: " << best_k << "\n";
+	    		std::cerr << "BIC: " << min_bic << "\n";
+    		}
+    	}
+
 
     	//int gmmfit
 

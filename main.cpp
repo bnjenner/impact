@@ -1,6 +1,7 @@
 #include <iostream>
 #include <chrono> 
 #include <seqan/arg_parse.h>
+#include "utils/peaks.h"
 #include "utils/alignments.h"
 #include "utils/count.h"
 
@@ -137,7 +138,8 @@ int main(int argc, char const ** argv) {
     std::cerr << "Parsing Alignment FIle\n";
 
     AlignmentFile alignment(args.alignment_file, args.index_file, 
-    						args.mapq_min, args.nonunique_alignments, args.peak_detection);
+    						args.mapq_min, args.nonunique_alignments, 
+    						args.peak_detection, args.max_components);
 
     std::cerr << "--------------\n";
     std::cerr << "Counting Reads\n";

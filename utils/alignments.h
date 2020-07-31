@@ -1,7 +1,5 @@
 #include <seqan/bam_io.h>
-#include <vector>
 #include <math.h>
-#include "peaks.h"
 
 using namespace seqan;
 
@@ -19,6 +17,7 @@ class AlignmentFile {
     	bool nonunique_alignments;		// consider secondary alignments 
     	int mapq;						// minimum mapping quality
     	bool peak_detection;			// peak detection
+    	int max_components;				// max components for GMM
 
     	// Counts
    		int unmapped = 0;    			// unmapped reads
@@ -34,13 +33,14 @@ class AlignmentFile {
 
 
     // Inialize
-    	AlignmentFile(CharString bam_file, CharString index_file, int pre_mapq, 
-    				  bool pre_nonunique_alignments, bool pre_peak_detection) {
+    	AlignmentFile(CharString bam_file, CharString index_file, int pre_mapq, bool pre_nonunique_alignments,
+    				  bool pre_peak_detection, int pre_max_components) {
 
     		// Set Attributes
     		mapq = pre_mapq;
     		nonunique_alignments = pre_nonunique_alignments;
     		peak_detection = pre_peak_detection;
+    		max_components = pre_max_components;
 
     		// Test Bam File Opening
 			if (!open(inFile, toCString(bam_file))) {
@@ -126,7 +126,7 @@ class AlignmentFile {
 
 
 		// Grab Alignments within Interval Using Bam Index
-		int findAlignments(CharString feature_name, CharString ref, int beginPos, int endPos, char strand) {
+		int findAlignments(MappingCounts &mappedCounts, CharString ref, int beginPos, int endPos, char strand) {
 
 		    // 1-based to 0-based.
 		    beginPos -= 1;
@@ -147,13 +147,10 @@ class AlignmentFile {
 		        return 0;  
 		    }
 
-		   
-		    MappingCounts mappedCounts(feature_name, beginPos, endPos);
-
 
 		    // Seek linearly to the selected position.
 		    BamAlignmentRecord record;
-		    BamFileOut out(context(inFile), std::cout, Sam());
+		    BamFileOut out(context(inFile), std::cerr, Sam());
 
 		    int num_alignments = 0;
 		    int align_end;
@@ -193,8 +190,8 @@ class AlignmentFile {
 		    }
 
 
-		    if (feature_name == "gl1315.NS.00574" && peak_detection) {
-		   		 mappedCounts.write(); 
+		    if (peak_detection && num_alignments > 10) {
+		   		 mappedCounts.fit(max_components); 
 		    }
 
 

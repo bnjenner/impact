@@ -1,6 +1,4 @@
 #include <seqan/gff_io.h>
-#include <string>
-#include <vector>
 
 using namespace seqan;
 
@@ -23,6 +21,8 @@ void getCounts(CharString gff_file, AlignmentFile &alignment, bool peak_detectio
     CharString feature_name = "";
     int num_alignments = 0;
     int i = 0;
+    int start;
+    int stop;
 
     while (!atEnd(gffIn)) {
 
@@ -31,15 +31,28 @@ void getCounts(CharString gff_file, AlignmentFile &alignment, bool peak_detectio
         if (feature_name != record.tagValues[0]) {
 
         	if (feature_name != "") {
-        		  std::cout << feature_name << ": " << num_alignments << std::endl; 
+
+        		MappingCounts mappedCounts(feature_name, start, stop);
+
+        		num_alignments += alignment.findAlignments(mappedCounts, record.ref, start, 
+       													   stop, record.strand);
+
+
+        		std::cout << feature_name << ": " << num_alignments << std::endl; 
 
         	}
 
         	num_alignments = 0;
         	feature_name = record.tagValues[0];
-        }
+        	start = record.beginPos;
+        	stop = record.endPos;
 
-        num_alignments += alignment.findAlignments(feature_name, record.ref, record.beginPos, record.endPos, record.strand);
+        } else {
+
+        	stop = record.endPos;
+        	continue;
+
+        }
 
         i++;
 
