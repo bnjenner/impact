@@ -25,10 +25,16 @@ utils/count.h
 /home/bnjenner/Center/work/CORE/thesis/program/impact/src/utils/alignments.h
 api/BamReader.h
 /home/bnjenner/Center/work/CORE/thesis/program/impact/src/utils/api/BamReader.h
+vector
+-
 math.h
+-
+unordered_map
 -
 
 /home/bnjenner/Center/work/CORE/thesis/program/impact/src/utils/count.h
+seqan/gff_io.h
+-
 
 /home/bnjenner/Center/work/CORE/thesis/program/impact/src/utils/peaks.h
 fstream

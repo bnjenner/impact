@@ -27,6 +27,9 @@ class MappingCounts {
     		length = stop - start + 1;
 
     		counts.set_size(1, length);
+    		counts.zeros();
+
+    		//std::cerr << "Interval: " << start << "-" << stop
 		} 
 
     // Methods
@@ -53,6 +56,10 @@ class MappingCounts {
     		mat unmapped_pre(1, begin, fill::zeros);
 			mat mapped(1, (read_stop - read_start + 1), fill::ones);
 			mat unmapped_post(1, end, fill::zeros);
+
+			// std::cerr << "___\n";
+			// std::cerr << counts.n_cols << "\n";
+			// std::cerr << unmapped_pre.n_cols << " " << mapped.n_cols << " " << unmapped_post.n_cols << "\n";
 
 			mat read = join_rows(join_rows(unmapped_pre, mapped), unmapped_post);
 
@@ -94,6 +101,11 @@ class MappingCounts {
     		for (int k = 1; k <= max_components; k++ ) {
 
     			status = model.learn(counts, k, eucl_dist, random_subset, 10, 5, 1e-10, false);
+
+    			if (!status) {
+    				std::cerr << counts << "\n";
+    			}
+
 				likelihood = model.sum_log_p(counts);
 				bic = likelihood - (2.5 * log(length)); // L - (1/2) p log(n)
 

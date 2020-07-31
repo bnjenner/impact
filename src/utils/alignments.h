@@ -1,19 +1,20 @@
-//#include <seqan/bam_io.h>
 #include "api/BamReader.h"
+#include <vector>
 #include <math.h>
+#include <unordered_map>
 
 using namespace BamTools;
+
 // Alignment Class
 class AlignmentFile {
 
 	public:
 
 	// Attributes
-		// BamFileIn inFile;				// Bam File Object
-  //   	BamIndex<Bai> baiIndex;			// Bam File Object
-  //   	BamAlignmentRecord record;		// Bam File Object
+		BamReader inFile;				// Bam File Object
+		BamAlignment alignment;			// BamAlignmentRecord record;		
 
-    	// Parameters
+    	// Program options 
     	bool nonunique_alignments;		// consider secondary alignments 
     	int mapq;						// minimum mapping quality
     	bool peak_detection;			// peak detection
@@ -25,11 +26,7 @@ class AlignmentFile {
     	int multimapped = 0;			// multimapped reads
     	int low_qual = 0;				// low qualirt reads
 
-    	// File Beginning Indicies
-    	int ref_id;						// SOF ref name
-    	int begin_pos;					// SOF start position
-    	int end_pos;					// SOF end position
-		bool hasAlignments; 			// initialize hasAlignment for jumpToRegion()
+    	std::unordered_map<std::string,int> contig_cache; 	// Unordered map 
 
 
     // Inialize
@@ -42,7 +39,6 @@ class AlignmentFile {
     		peak_detection = pre_peak_detection;
     		max_components = pre_max_components;
 
-    		BamReader inFile;
 
     		if (!inFile.Open(bam_file)) {
 		        std::cerr << "ERROR: Could not read alignment file: " << bam_file << "\n";
@@ -54,384 +50,147 @@ class AlignmentFile {
 		        throw "ERROR: Could not read index file";
 		    }
 
+		    // if (!inFile.SetRegion(0, 2311417, 0, 2313233)) {
+		    // 	std::cerr << "ERROR: Unable to jump to region.\n";
+		    // }
 
-		    BamAlignment alignment;
+		    SamHeader head = inFile.GetHeader();
+			if (head.HasSortOrder()) {
 
-		    if (!inFile.SetRegion(0, 1056327, 0, 1056327)) {
-		    	std::cerr << "ERROR: Unable to jump to region.\n";
-		    }
+				std::string sortOrder = head.SortOrder;
 
+				if (sortOrder.compare("coordinate") != 0) {
+					std::cerr << "ERROR: Sorted alignment file required.\n";
+					throw "ERROR: Could not read alignment file.";
+				}
 
-			for (int i=0; i < 10; i++) {
+			} else {
+				std::cerr << "ERROR: BAM file has no @HD SO:<SortOrder> attribute. Impossible to determine sort order.\n";
+					throw "ERROR: Could determine sort status.";
 
-	        	inFile.GetNextAlignment(alignment);
-	        	std::cout << "1: " << alignment.MapQuality << "\n";
-	        
-	        }		
+			}
 
-			inFile.Close();
+			// Generate Ref Map (contig indicies)
+			RefVector references = inFile.GetReferenceData();
+			for (int i = 0; i < references.size(); i++) {
 
+				contig_cache[references.at(i).RefName] = i;
 
-   //  		// Test Bam File Opening
-			// if (!open(inFile, toCString(bam_file))) {
-		 //        std::cerr << "ERROR: Could not read alignment file: " << bam_file << "\n";
-		 //        throw "ERROR: Could not read alignment file.";
-		 //    }
+			}
+			
 
-		 //    // Test Bam Index File Opening
-		 //    if (!open(baiIndex, toCString(index_file))) {
-		 //        std::cerr << "ERROR: Could not read index file: " << index_file << "\n";
-		 //        throw "ERROR: Could not read index file";
-		 //    }
+			while (inFile.GetNextAlignment(alignment)) {
 
-		 //    // Attach Bam file to standard out
-		 //    BamFileOut out(context(inFile), std::cout, Sam());
+				 if (!alignment.IsMapped()) {
+		        	unmapped++;
+		        	continue;
+		        } 
 
-		 //    // Read in Header, a necessary evil
-		 //    BamHeader header;
-		 //    readHeader(header, inFile);
+		        // PSEUDO CODE 
+		        // if (record.qual <= mapq && countedID(record.rID) == False) {
+		        // 	low_qual++;
+		        // 	continue;
+		        // } 
 
-		 //   	bool first = true;
+		        // HOW TO ADDRESS MULTIMAPPING AND OVERLAPS?
 
-		 //   	while (!atEnd(inFile)) {
+		        // PSEUDO CODE
+		        // if (hasFlagMultiple(record) && nonunique-alignments && countedID(record.rID) == False){
+		        // 	multimapped++;
+		        // 	continue;
+		        // }
+		    }  
 
-		 //   		readRecord(record, inFile);
+		    std::cout << "Unmapped: " << unmapped << std::endl;
+		    std::cout << "Multimapped: " << multimapped << std::endl;
 
-		 //   		// If first entry, use these stats for beginning of file
-		 //   		if (first) {
-		 //   			ref_id = getIdByName(ref_id, contigNamesCache(context(inFile)), record.rID);
-			// 	   	begin_pos = record.beginPos;
-			// 	   	end_pos = record.beginPos + 1;
-			// 	   	first = false;
-			// 	}
-
-
-		 //        if (hasFlagUnmapped(record)) {
-		 //        	unmapped++;
-		 //        	continue;
-		 //        } 
-
-		 //        // PSEUDO CODE 
-		 //        // if (record.qual <= mapq && countedID(record.rID) == False) {
-		 //        // 	low_qual++;
-		 //        // 	continue;
-		 //        // } 
-
-		 //        // HOW TO ADDRESS MULTIMAPPING AND OVERLAPS?
-
-		 //        // PSEUDO CODE
-		 //        // if (hasFlagMultiple(record) && nonunique-alignments && countedID(record.rID) == False){
-		 //        // 	multimapped++;
-		 //        // 	continue;
-		 //        // }
-		 //    }  
-
-		 //    // std::cout << "Unmapped: " << unmapped << std::endl;
-		 //    // std::cout << "Multimapped: " << multimapped << std::endl;
-
-		 //   	// Jump to the first entry in file.
-		 //    jumpToRegion(inFile, hasAlignments, ref_id, begin_pos, end_pos, baiIndex);
+		   	// Jump to the first entry in file
+		   	inFile.Rewind(); 	
 
 		}
 
     // Methods
+
+		void close() {
+
+			inFile.Close();
+
+		}
 //     	// head Bam
-// 		void head() {
+		void head() {
 
-// 			BamFileOut out(context(inFile), std::cout, Sam());
-// 			BamAlignmentRecord record;
+			int i = 0;
+		 	while (inFile.GetNextAlignment(alignment) && i < 10) { // (!atEnd(bamFileIn))
 
-// 			int i = 0;
-// 		 	while (i < 10) { // (!atEnd(bamFileIn))
+		        std::cout << alignment.Name << "\n";
+		        i++;
 
-// 		        readRecord(record, inFile);
-// 		        writeRecord(out, record);
-// 		        i++;
+		    }  
 
-// 		    }  
+		   	// Jump to the first entry in file.
+		   	inFile.Rewind(); 	
 
-// 		    // Jump the first entry in file.
-// 		    jumpToRegion(inFile, hasAlignments, ref_id, begin_pos, end_pos, baiIndex);
-// 		}
+		}
 
 
-// 		// Grab Alignments within Interval Using Bam Index
-// 		int findAlignments(MappingCounts &mappedCounts, CharString ref, int beginPos, int endPos, char strand) {
+		// Grab Alignments within Interval Using Bam Index
+		int findAlignments(MappingCounts &mappedCounts, std::string ref, int beginPos, int endPos, char strand) {
 
-// 		    // 1-based to 0-based.
-// 		    beginPos -= 1;
-// 		    endPos -= 1;
+		    // 1-based to 0-based.
 
-// 		    // Translate from reference name to rID.
-// 		    int rID = 0;
-// 		    if (!getIdByName(rID, contigNamesCache(context(inFile)), ref)) {
-// 		        std::cerr << "ERROR: Reference sequence named " << ref << " not known.\n";
-// 		        return 0;
-// 		    }
+		    int rID = contig_cache[ref];
 
+ 			if (!inFile.SetRegion(rID, beginPos, rID, endPos)) {
+ 				std::cerr << mappedCounts.feature_name << " " << ref << " " << rID << beginPos << "\n";
+		    	return 0;
+		    }
 
-// 		    jumpToRegion(inFile, hasAlignments, rID, beginPos, endPos, baiIndex);
+		    int num_alignments = 0;
+		    int align_end;
 
-// 		    // Check if alignments exits
-//  		    if (!hasAlignments) {
-// 		        return 0;  
-// 		    }
+			while (inFile.GetNextAlignment(alignment)) {
 
+		        // Break if not mapped, past reference id, or end of file.
+		        if (alignment.RefID > rID || alignment.Position >= endPos) {
+		            break;
+		        }
 
-// 		    // Seek linearly to the selected position.
-// 		    BamAlignmentRecord record;
-// 		    BamFileOut out(context(inFile), std::cerr, Sam());
+		        // Check Strandedness
+		        if ((!alignment.IsReverseStrand() && strand != '-') || (alignment.IsReverseStrand() && strand == '-')) {
+		        	continue;
+		        }
+		     
+		        // Check if primary alignment
+		        if (!alignment.IsPrimaryAlignment() && (nonunique_alignments == false)) {
+		        	continue;
+		        }
 
-// 		    int num_alignments = 0;
-// 		    int align_end;
+		        // Check if sufficient quality
+		        // if (record.mapQ && mapq != -1) {
+		        // 	continue;
+		        // }
 
-// 		    while (!atEnd(inFile)) {
-
-// 		        readRecord(record, inFile);
-
-// 		        // Break if not mapped, past reference id, or end of file.
-// 		        if (record.rID == -1 || record.rID > rID || record.beginPos >= endPos) {
-// 		            break;
-// 		        }
-
-// 		        // Check Strandedness
-// 		        if ((hasFlagRC(record) && strand != '-') || (!hasFlagRC(record) && strand != '+')) {
-// 		        	continue;
-// 		        } 
-
-// 		        // Check if primary alignment
-// 		        if (hasFlagSecondary(record) && (nonunique_alignments == false)) {
-// 		        	continue;
-// 		        }
-
-// 		        // Check if sufficient quality
-// 		        // if (record.mapQ && mapq != -1) {
-// 		        // 	continue;
-// 		        // }
-
-// 		        align_end = record.beginPos - 1 + getAlignmentLengthInRef(record);
 		        
-// 		        if (peak_detection) {
-// 		        	mappedCounts.addRead(record.beginPos, align_end);
-// 		        }
+		        
+		        if (peak_detection) {
+		        	mappedCounts.addRead(alignment.Position, alignment.GetEndPosition());
+		        }
 
-// 		        num_alignments++;
+		        num_alignments++;
 	
-// 		    }
+		    }
 
 
-// 		    if (peak_detection && num_alignments > 10) {
-// 		   		 mappedCounts.fit(max_components); 
-// 		    }
+		    if (peak_detection && num_alignments > 10) {
+		   		 mappedCounts.fit(max_components); 
+		    }
 
 
-// 		    // Return to beginnig 
-// 		    jumpToRegion(inFile, hasAlignments, ref_id, begin_pos, end_pos, baiIndex);
+		    // Return to beginnig 
+		    inFile.Rewind();
 
-// 		   	return num_alignments;
-// 		}
+		   	return num_alignments;
+		}
 
 };
-
-
-
-// // Alignment Class
-// class AlignmentFile {
-
-// 	public:
-
-// 	// Attributes
-// 		BamFileIn inFile;				// Bam File Object
-//     	BamIndex<Bai> baiIndex;			// Bam File Object
-//     	BamAlignmentRecord record;		// Bam File Object
-
-//     	// Parameters
-//     	bool nonunique_alignments;		// consider secondary alignments 
-//     	int mapq;						// minimum mapping quality
-//     	bool peak_detection;			// peak detection
-//     	int max_components;				// max components for GMM
-
-//     	// Counts
-//    		int unmapped = 0;    			// unmapped reads
-//     	int ambiguous = 0;   			// ambiguous reads
-//     	int multimapped = 0;			// multimapped reads
-//     	int low_qual = 0;				// low qualirt reads
-
-//     	// File Beginning Indicies
-//     	int ref_id;						// SOF ref name
-//     	int begin_pos;					// SOF start position
-//     	int end_pos;					// SOF end position
-// 		bool hasAlignments; 			// initialize hasAlignment for jumpToRegion()
-
-
-//     // Inialize
-//     	AlignmentFile(CharString bam_file, CharString index_file, int pre_mapq, bool pre_nonunique_alignments,
-//     				  bool pre_peak_detection, int pre_max_components) {
-
-//     		// Set Attributes
-//     		mapq = pre_mapq;
-//     		nonunique_alignments = pre_nonunique_alignments;
-//     		peak_detection = pre_peak_detection;
-//     		max_components = pre_max_components;
-
-//     		// Test Bam File Opening
-// 			if (!open(inFile, toCString(bam_file))) {
-// 		        std::cerr << "ERROR: Could not read alignment file: " << bam_file << "\n";
-// 		        throw "ERROR: Could not read alignment file.";
-// 		    }
-
-// 		    // Test Bam Index File Opening
-// 		    if (!open(baiIndex, toCString(index_file))) {
-// 		        std::cerr << "ERROR: Could not read index file: " << index_file << "\n";
-// 		        throw "ERROR: Could not read index file";
-// 		    }
-
-// 		    // Attach Bam file to standard out
-// 		    BamFileOut out(context(inFile), std::cout, Sam());
-
-// 		    // Read in Header, a necessary evil
-// 		    BamHeader header;
-// 		    readHeader(header, inFile);
-
-// 		   	bool first = true;
-
-// 		   	while (!atEnd(inFile)) {
-
-// 		   		readRecord(record, inFile);
-
-// 		   		// If first entry, use these stats for beginning of file
-// 		   		if (first) {
-// 		   			ref_id = getIdByName(ref_id, contigNamesCache(context(inFile)), record.rID);
-// 				   	begin_pos = record.beginPos;
-// 				   	end_pos = record.beginPos + 1;
-// 				   	first = false;
-// 				}
-
-
-// 		        if (hasFlagUnmapped(record)) {
-// 		        	unmapped++;
-// 		        	continue;
-// 		        } 
-
-// 		        // PSEUDO CODE 
-// 		        // if (record.qual <= mapq && countedID(record.rID) == False) {
-// 		        // 	low_qual++;
-// 		        // 	continue;
-// 		        // } 
-
-// 		        // HOW TO ADDRESS MULTIMAPPING AND OVERLAPS?
-
-// 		        // PSEUDO CODE
-// 		        // if (hasFlagMultiple(record) && nonunique-alignments && countedID(record.rID) == False){
-// 		        // 	multimapped++;
-// 		        // 	continue;
-// 		        // }
-// 		    }  
-
-// 		    // std::cout << "Unmapped: " << unmapped << std::endl;
-// 		    // std::cout << "Multimapped: " << multimapped << std::endl;
-
-// 		   	// Jump to the first entry in file.
-// 		    jumpToRegion(inFile, hasAlignments, ref_id, begin_pos, end_pos, baiIndex);
-
-// 		}
-
-//     // Methods
-//     	// head Bam
-// 		void head() {
-
-// 			BamFileOut out(context(inFile), std::cout, Sam());
-// 			BamAlignmentRecord record;
-
-// 			int i = 0;
-// 		 	while (i < 10) { // (!atEnd(bamFileIn))
-
-// 		        readRecord(record, inFile);
-// 		        writeRecord(out, record);
-// 		        i++;
-
-// 		    }  
-
-// 		    // Jump the first entry in file.
-// 		    jumpToRegion(inFile, hasAlignments, ref_id, begin_pos, end_pos, baiIndex);
-// 		}
-
-
-// 		// Grab Alignments within Interval Using Bam Index
-// 		int findAlignments(MappingCounts &mappedCounts, CharString ref, int beginPos, int endPos, char strand) {
-
-// 		    // 1-based to 0-based.
-// 		    beginPos -= 1;
-// 		    endPos -= 1;
-
-// 		    // Translate from reference name to rID.
-// 		    int rID = 0;
-// 		    if (!getIdByName(rID, contigNamesCache(context(inFile)), ref)) {
-// 		        std::cerr << "ERROR: Reference sequence named " << ref << " not known.\n";
-// 		        return 0;
-// 		    }
-
-
-// 		    jumpToRegion(inFile, hasAlignments, rID, beginPos, endPos, baiIndex);
-
-// 		    // Check if alignments exits
-//  		    if (!hasAlignments) {
-// 		        return 0;  
-// 		    }
-
-
-// 		    // Seek linearly to the selected position.
-// 		    BamAlignmentRecord record;
-// 		    BamFileOut out(context(inFile), std::cerr, Sam());
-
-// 		    int num_alignments = 0;
-// 		    int align_end;
-
-// 		    while (!atEnd(inFile)) {
-
-// 		        readRecord(record, inFile);
-
-// 		        // Break if not mapped, past reference id, or end of file.
-// 		        if (record.rID == -1 || record.rID > rID || record.beginPos >= endPos) {
-// 		            break;
-// 		        }
-
-// 		        // Check Strandedness
-// 		        if ((hasFlagRC(record) && strand != '-') || (!hasFlagRC(record) && strand != '+')) {
-// 		        	continue;
-// 		        } 
-
-// 		        // Check if primary alignment
-// 		        if (hasFlagSecondary(record) && (nonunique_alignments == false)) {
-// 		        	continue;
-// 		        }
-
-// 		        // Check if sufficient quality
-// 		        // if (record.mapQ && mapq != -1) {
-// 		        // 	continue;
-// 		        // }
-
-// 		        align_end = record.beginPos - 1 + getAlignmentLengthInRef(record);
-		        
-// 		        if (peak_detection) {
-// 		        	mappedCounts.addRead(record.beginPos, align_end);
-// 		        }
-
-// 		        num_alignments++;
-	
-// 		    }
-
-
-// 		    if (peak_detection && num_alignments > 10) {
-// 		   		 mappedCounts.fit(max_components); 
-// 		    }
-
-
-// 		    // Return to beginnig 
-// 		    jumpToRegion(inFile, hasAlignments, ref_id, begin_pos, end_pos, baiIndex);
-
-// 		   	return num_alignments;
-// 		}
-
-// };
 

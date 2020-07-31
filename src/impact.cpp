@@ -142,10 +142,11 @@ int main(int argc, char const ** argv) {
     						args.mapq_min, args.nonunique_alignments, 
     						args.peak_detection, args.max_components);
 
+
     std::cerr << "--------------\n";
     std::cerr << "Counting Reads\n";
 
-   	//getCounts(args.gff_file, alignment, args.peak_detection);
+   	getCounts(args.gff_file, alignment, args.peak_detection);
    	
    	
    	auto stop = std::chrono::high_resolution_clock::now(); 
