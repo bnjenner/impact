@@ -98,6 +98,7 @@ class MappingCounts {
 
     		gmm_diag model;
 
+
     		for (int k = 1; k <= max_components; k++ ) {
 
     			status = model.learn(counts, k, eucl_dist, random_subset, 10, 5, 1e-10, false);
@@ -120,7 +121,7 @@ class MappingCounts {
 
     		}
 
-    		if (best_k > 1 || feature_name == "gl1315.NS.00574" || feature_name == "gl1315.NS.01567") {
+    		if (best_k > 1) {
 
 	    		std::cerr << "------\nName: " << feature_name << "\n";
 	    		std::cerr << "Mean : " << mean.at(0,0);
