@@ -10,7 +10,7 @@ class MappingCounts {
 	public:
 
 	// Attributes
-		seqan::CharString feature_name;
+		std::string feature_name;
 		int start;
 		int stop;
 		int length;
@@ -18,7 +18,7 @@ class MappingCounts {
 		mat counts;
 
     // Inialize
-    	MappingCounts(seqan::CharString feat_name, int interval_start, int interval_stop) {
+    	MappingCounts(std::string feat_name, int interval_start, int interval_stop) {
 
     		// Set Attributes
     		feature_name = feat_name;
@@ -75,7 +75,7 @@ class MappingCounts {
     	void write() {
 
     		std::ofstream out_file;
-			out_file.open ("gl1315.NS.00574.txt");
+			out_file.open(feature_name + ".txt");
 
 			for (int i = 0; i <= counts.n_cols; i++) {
 				out_file << counts.at(0,i) << std::endl;
@@ -90,9 +90,10 @@ class MappingCounts {
     		std::vector<double> bic_scores;
     		bool status;
     		double likelihood;
-    		double min_bic = 10000000; // arbitrarily large number
+    		double max_bic;
     		double bic;
     		int best_k;
+    		int p;
     		mat mean;
 
     		gmm_diag model;
@@ -105,18 +106,21 @@ class MappingCounts {
     				std::cerr << counts << "\n";
     			}
 
-				likelihood = model.sum_log_p(counts);
-				bic = likelihood - (2.5 * log(length)); // L - (1/2) p log(n)
+    			p = (2 * k) + k - 1;
 
-				if (min_bic > bic) {
-					min_bic = bic;
+				likelihood = model.sum_log_p(counts);
+				bic = (p  * log(counts.n_cols)) - (2 * likelihood); // L - (1/2) p log(n)
+
+
+				if (max_bic < bic || k == 1) {
+					max_bic = bic;
 					best_k = k;
 					mean = model.means;
 				}
 
     		}
 
-    		if (best_k > 1) {
+    		if (best_k > 1 || feature_name == "gl1315.NS.00574" || feature_name == "gl1315.NS.01567") {
 
 	    		std::cerr << "------\nName: " << feature_name << "\n";
 	    		std::cerr << "Mean : " << mean.at(0,0);
@@ -125,7 +129,7 @@ class MappingCounts {
 				}
 				std::cerr << "\n";
 				std::cerr << "K: " << best_k << "\n";
-	    		std::cerr << "BIC: " << min_bic << "\n";
+	    		std::cerr << "BIC: " << max_bic << "\n";
     		}
     	}
 
