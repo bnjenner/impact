@@ -182,14 +182,15 @@ class AlignmentFile {
 	
 		    }
 
+		    // I obviously didn't do this right
 
-		    if (peak_detection && num_alignments > 5) {
-		   		 mappedCounts.fit(max_components); 
-		    }
+		    // if (peak_detection && num_alignments > 5) {
+		   	// 	 mappedCounts.fit(max_components); 
+		    // }
 
-		    if (mappedCounts.feature_name == "gl1315.NS.00574" || mappedCounts.feature_name == "gl1315.NS.01567") {
-		    	mappedCounts.write();
-		    }
+		    // if (mappedCounts.feature_name == "gl1315.NS.00574" || mappedCounts.feature_name == "gl1315.NS.01567") {
+		    // 	mappedCounts.write();
+		    // }
 
 		    // Return to beginnig 
 		    inFile.Rewind();
