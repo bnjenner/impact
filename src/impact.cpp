@@ -14,6 +14,8 @@ struct ImpactArguments
     std::string alignment_file;    	// sam or bam file
     std::string index_file;    			// index file
     std::string gff_file;      			// gff file
+    std::string strandedness;           // library strandedness
+    std::string library_type;           // library type (SE or PE)
     bool nonunique_alignments;			// count primary and secondary alignments
     int mapq_min;						// minimum mapq score
     bool peak_detection; 				// enable peak detection 
@@ -36,6 +38,20 @@ ArgumentParser::ParseResult argparse(int argc, char const ** argv, ImpactArgumen
     addArgument(parser, seqan::ArgParseArgument(
         ArgParseArgument::INPUT_FILE, "GFF"));
 
+      // Strandedness 
+    addOption(parser, seqan::ArgParseOption(
+        "s", "strandedness", "Strandedness of library.",
+        ArgParseArgument::STRING, "STRING"));
+    setDefaultValue(parser, "strandedness", "forward");
+    setValidValues(parser, "strandedness", "forward reverse unstranded");
+
+      // Library Type
+    addOption(parser, seqan::ArgParseOption(
+        "l", "library-type", "Library type.",
+        ArgParseArgument::STRING, "STRING"));
+    setDefaultValue(parser, "library-type", "paired");
+    setValidValues(parser, "library-type", "single paired");
+
       // Nonunique Alignments
 	addOption(parser, seqan::ArgParseOption(
         "n", "nonunique-alignments", "Count primary and secondary read alignments."));
@@ -43,7 +59,7 @@ ArgumentParser::ParseResult argparse(int argc, char const ** argv, ImpactArgumen
 	  // Min Quality
 	addOption(parser, ArgParseOption(
 	    "q", "mapq-min",
-	    "Minimum mapping quality score to consider for counts (default is no minimum).",
+	    "Minimum mapping quality score to consider for counts.",
 	    ArgParseArgument::INTEGER, "INT"));
 	setDefaultValue(parser, "mapq-min", "-1");
 
@@ -60,6 +76,7 @@ ArgumentParser::ParseResult argparse(int argc, char const ** argv, ImpactArgumen
 
 	// Add Information 
 	addUsageLine(parser, "input.bam input.gff [options]");
+    setDefaultValue(parser, "version-check", "OFF");
 	hideOption(parser, "version-check");
 	setVersion(parser, "dev0");
     setDate(parser, "July 2020");
@@ -102,6 +119,8 @@ ArgumentParser::ParseResult argparse(int argc, char const ** argv, ImpactArgumen
 	}
 
 	  // Options
+    getOptionValue(args.strandedness, parser, "strandedness");
+    getOptionValue(args.library_type, parser, "library-type");
 	args.nonunique_alignments = isSet(parser, "nonunique-alignments");
    	getOptionValue(args.mapq_min, parser, "mapq-min");
    	args.peak_detection = isSet(parser, "peak-detection");
@@ -129,6 +148,8 @@ int main(int argc, char const ** argv) {
     std::cerr << "  Alignment File: " << args.alignment_file << "\n";
     std::cerr << "  Index File: " << args.index_file << "\n";
     std::cerr << "  GFF File: " << args.gff_file << "\n";
+    std::cerr << "  Strandedness: " << args.strandedness << "\n";
+    std::cerr << "  Library: " << args.library_type << "\n";
     std::cerr << "  Nonunique: " << args.nonunique_alignments << "\n";
     std::cerr << "  Minimum MAPQ: " << args.mapq_min << "\n";
     std::cerr << "  Peak Detection: " << args.peak_detection << "\n";
@@ -136,9 +157,11 @@ int main(int argc, char const ** argv) {
     
 
     std::cerr << "----------------------\n";
-    std::cerr << "Parsing Alignment FIle\n";
+    std::cerr << "Parsing Alignment File\n";
 
+    // Construct alignment object
     AlignmentFile alignment(args.alignment_file, args.index_file, 
+                            args.strandedness, args.library_type,
     						args.mapq_min, args.nonunique_alignments, 
     						args.peak_detection, args.max_components);
 
@@ -146,8 +169,12 @@ int main(int argc, char const ** argv) {
     std::cerr << "--------------\n";
     std::cerr << "Counting Reads\n";
 
+    // Count Reads
    	getCounts(args.gff_file, alignment, args.peak_detection);
    	
+
+    // Close alignment file
+    alignment.close();
    	
    	auto stop = std::chrono::high_resolution_clock::now(); 
    	auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start); 

@@ -39,8 +39,8 @@ void getCounts(CharString gff_file, AlignmentFile &alignment, bool peak_detectio
         		MappingCounts mappedCounts(toCString(feature_name), start, stop);
 
 
-        		num_alignments += alignment.findAlignments(mappedCounts, toCString(contig), start, 
-       													   stop, strand);
+        		num_alignments += alignment.findAlignments(mappedCounts, toCString(contig), 
+                                                           start, stop, strand);
 
 
         		std::cout << feature_name << ": " << num_alignments << std::endl; 

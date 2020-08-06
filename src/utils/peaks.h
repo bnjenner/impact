@@ -56,10 +56,6 @@ class MappingCounts {
 			mat mapped(1, (read_stop - read_start + 1), fill::ones);
 			mat unmapped_post(1, end, fill::zeros);
 
-			// std::cerr << "___\n";
-			// std::cerr << counts.n_cols << "\n";
-			// std::cerr << unmapped_pre.n_cols << " " << mapped.n_cols << " " << unmapped_post.n_cols << "\n";
-
 			mat read = join_rows(join_rows(unmapped_pre, mapped), unmapped_post);
 
     		counts = counts + read;
@@ -87,7 +83,6 @@ class MappingCounts {
 
     	void fit(int max_components) {
 
-    		std::vector<double> bic_scores;
     		bool status;
     		double likelihood;
     		double max_bic;
@@ -96,45 +91,62 @@ class MappingCounts {
     		int p;
     		mat mean;
 
-    		gmm_diag model;
+            mat data;
+            mat temp;
+            data.set_size(1, 0);
+
+            
+
+            for (uword i = 0; i < counts.n_cols; i++) {
+
+                if (counts[i] > 10) {
+                    mat temp(1, counts[i], fill::ones);
+                    temp = temp * (i + 1);
+
+                    data = join_rows(data, temp);
+                }
+            }
+
+            if (data.n_cols > 0) {
 
 
-    		for (int k = 1; k <= max_components; k++ ) {
-
-    			status = model.learn(counts, k, eucl_dist, random_subset, 10, 5, 1e-10, false);
-
-    			if (!status) {
-    				std::cerr << counts << "\n";
-    			}
-
-    			p = (2 * k) + k - 1;
-
-				likelihood = model.sum_log_p(counts);
-				bic = (p  * log(counts.n_cols)) - (2 * likelihood); // L - (1/2) p log(n)
+        		gmm_diag model;
 
 
-				if (max_bic < bic || k == 1) {
-					max_bic = bic;
-					best_k = k;
-					mean = model.means;
-				}
+        		for (int k = 1; k <= max_components; k++ ) {
 
-    		}
+        			status = model.learn(data, k, eucl_dist, random_subset, 10, 5, 1e-10, false);
 
-    		if (best_k > 1) {
+        			if (!status) {
+        				std::cerr << counts << "\n";
+        			}
 
-	    		std::cerr << "------\nName: " << feature_name << "\n";
-	    		std::cerr << "Mean : " << mean.at(0,0);
-	    		for (int i = 1; i < mean.n_cols; i++) {
-	    			std::cerr << "\t" << mean.at(0,i);
-				}
-				std::cerr << "\n";
-				std::cerr << "K: " << best_k << "\n";
-	    		std::cerr << "BIC: " << max_bic << "\n";
-    		}
+        			p = (2 * k) + k - 1;
+
+    				likelihood = model.sum_log_p(data);
+
+    				bic = (2 * likelihood) - (p  * log(data.n_cols)); // Liklihood penalized by complexity
+
+    				if (max_bic < bic || k == 1) {
+    					max_bic = bic;
+    					best_k = k;
+    					mean = model.means;
+    				}
+
+        		}
+
+        		if (best_k > 0) {
+
+    	    		std::cerr << "------\nName: " << feature_name << "\n";
+    	    		std::cerr << "Mean : " << mean.at(0,0) + start;
+    	    		for (int i = 1; i < mean.n_cols; i++) {
+    	    			std::cerr << "\t" << mean.at(0,i) + start;
+    				}
+    				std::cerr << "\n";
+    				std::cerr << "K: " << best_k << "\n";
+    	    		std::cerr << "BIC: " << max_bic << "\n";
+        		}
+            }
     	}
-
-
-    	//int gmmfit
 
 };

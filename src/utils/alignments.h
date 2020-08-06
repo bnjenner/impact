@@ -15,6 +15,8 @@ class AlignmentFile {
 		BamAlignment alignment;			// BamAlignmentRecord record;		
 
     	// Program options 
+    	std::string strandedness;		// strandedness of library
+    	std::string library_type;		// library type
     	bool nonunique_alignments;		// consider secondary alignments 
     	int mapq;						// minimum mapping quality
     	bool peak_detection;			// peak detection
@@ -30,12 +32,16 @@ class AlignmentFile {
 
 
     // Inialize
-    	AlignmentFile(std::string bam_file, std::string index_file, int pre_mapq, bool pre_nonunique_alignments,
+    	AlignmentFile(std::string bam_file, std::string index_file, 
+    				  std::string pre_strandedness, std::string pre_library_type, 
+    				  int pre_mapq, bool pre_nonunique_alignments,
     				  bool pre_peak_detection, int pre_max_components) {
 
     		// Set Attributes
-    		mapq = pre_mapq;
+    		strandedness = pre_strandedness;
+    		library_type = pre_library_type;
     		nonunique_alignments = pre_nonunique_alignments;
+    		mapq = pre_mapq;
     		peak_detection = pre_peak_detection;
     		max_components = pre_max_components;
 
@@ -134,7 +140,8 @@ class AlignmentFile {
 
 
 		// Grab Alignments within Interval Using Bam Index
-		int findAlignments(MappingCounts &mappedCounts, std::string ref, int beginPos, int endPos, char strand) {
+		int findAlignments(MappingCounts &mappedCounts, std::string ref, int beginPos, int endPos, 
+						   char strand) {
 
 		    // 1-based to 0-based.
 
@@ -148,6 +155,11 @@ class AlignmentFile {
 		    int num_alignments = 0;
 		    int align_end;
 
+		    if (strandedness == "reverse" && strand == '-') {
+		    	strand = '+';
+		    } else if (strandedness == "reverse" && strand == '+') {
+		    	strand = '-';
+		    }
 
 			while (inFile.GetNextAlignment(alignment)) {
 
@@ -158,9 +170,11 @@ class AlignmentFile {
 		        }
 
 		        // Check Strandedness
-		        if ((alignment.IsReverseStrand() && strand != '-') || (!alignment.IsReverseStrand() && strand == '-')) {
-		        	continue;
-		        }
+		        if (strandedness != "unstranded") {
+			        if ((alignment.IsReverseStrand() && strand != '-') || (!alignment.IsReverseStrand() && strand == '-')) {
+			        	continue;
+			        }
+		    	}
 		     
 		        // Check if primary alignment
 		        if (!alignment.IsPrimaryAlignment() && (nonunique_alignments == false)) {
@@ -168,11 +182,10 @@ class AlignmentFile {
 		        }
 
 		        // Check if sufficient quality
-		        // if (record.mapQ && mapq != -1) {
-		        // 	continue;
-		        // }
+		        if (alignment.MapQuality && mapq != -1) {
+		        	continue;
+		        }
 
-		        
 		        
 		        if (peak_detection) {
 		        	mappedCounts.addRead(alignment.Position, alignment.GetEndPosition());
@@ -184,9 +197,9 @@ class AlignmentFile {
 
 		    // I obviously didn't do this right
 
-		    // if (peak_detection && num_alignments > 5) {
-		   	// 	 mappedCounts.fit(max_components); 
-		    // }
+		    if (peak_detection && num_alignments > 10) {
+		   		 mappedCounts.fit(max_components); 
+		    }
 
 		    // if (mappedCounts.feature_name == "gl1315.NS.00574" || mappedCounts.feature_name == "gl1315.NS.01567") {
 		    // 	mappedCounts.write();
