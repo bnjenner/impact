@@ -109,13 +109,15 @@ class MappingCounts {
 
             if (data.n_cols > 0) {
 
+                double data_norm = norm(data, 2);
+                data = data / data_norm;
 
         		gmm_diag model;
 
 
         		for (int k = 1; k <= max_components; k++ ) {
 
-        			status = model.learn(data, k, eucl_dist, random_subset, 10, 5, 1e-10, false);
+        			status = model.learn(data, k, eucl_dist, random_subset, 10, 10, 1e-10, false);
 
         			if (!status) {
         				std::cerr << counts << "\n";
@@ -138,9 +140,9 @@ class MappingCounts {
         		if (best_k > 0) {
 
     	    		std::cerr << "------\nName: " << feature_name << "\n";
-    	    		std::cerr << "Mean : " << mean.at(0,0) + start;
+    	    		std::cerr << "Mean : " << (mean.at(0,0) * data_norm) + start;
     	    		for (int i = 1; i < mean.n_cols; i++) {
-    	    			std::cerr << "\t" << mean.at(0,i) + start;
+    	    			std::cerr << "\t" << (mean.at(0,i) * data_norm) + start;
     				}
     				std::cerr << "\n";
     				std::cerr << "K: " << best_k << "\n";
