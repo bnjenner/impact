@@ -11,6 +11,7 @@ class MappingCounts {
 
 	// Attributes
 		std::string feature_name;
+        char strand;
 		int start;
 		int stop;
 		int length;
@@ -18,10 +19,11 @@ class MappingCounts {
 		mat counts;
 
     // Inialize
-    	MappingCounts(std::string feat_name, int interval_start, int interval_stop) {
+    	MappingCounts(std::string feat_name, char pre_strand, int interval_start, int interval_stop) {
 
     		// Set Attributes
     		feature_name = feat_name;
+            strand = pre_strand;
     		start = interval_start;
     		stop = interval_stop;
     		length = stop - start + 1;
@@ -87,7 +89,7 @@ class MappingCounts {
     		double likelihood;
     		double max_bic;
     		double bic;
-    		int best_k;
+    		int best_k = 0;
     		int p;
     		mat mean;
 
@@ -117,12 +119,12 @@ class MappingCounts {
 
         		for (int k = 1; k <= max_components; k++ ) {
 
-        			status = model.learn(data, k, eucl_dist, random_subset, 10, 10, 1e-10, false);
+        			status = model.learn(data, k, eucl_dist, random_subset, 0, 10, 1e-10, false);
 
-        			// if (!status) {
-        			// 	std::cerr << counts << "\n";
-        			// }
-
+        			if (!status) {
+        				continue;
+        			}
+                   
         			p = (2 * k) + k - 1;
 
     				likelihood = model.sum_log_p(data);
@@ -137,6 +139,11 @@ class MappingCounts {
 
         		}
 
+                // Check if any models ran.
+                if (best_k == 0) {
+                    std::cerr << "ERROR: No model could be fit to reads for gene: " << feature_name << ".\n";
+                    return;
+                }
 
                 mean = sort(mean * data_norm, "ascend", 1);
 
@@ -171,22 +178,23 @@ class MappingCounts {
 
 
         		if (best_k > 0) {
-
-    	    		std::cerr << "------\nName: " << feature_name << "\n";
                     
     	    		for (int i = 0; i < mean.n_cols; i++) {
 
                         if (mean.at(0,i) != 0) {
 
-                            std::cerr << "Mean: ";
-                            std::cerr << mean.at(0,i) + start << ", ";
-                            std::cerr << counts.at(0, round(mean.at(0,i))) << "\n";
+                            int pos = round(mean.at(0,i));
+                            int intensity = counts.at(0, pos);
+
+                            std::cerr << feature_name << "\t";
+                            std::cerr << strand << "\t";
+                            std::cerr << std::fixed << pos + start << "\t";
+                            std::cerr << std::fixed << intensity << "\n";
+
 
                         }
                     }
 
-    				std::cerr << "K: " << best_k << "\n";
-    	    		std::cerr << "BIC: " << max_bic << "\n";
         		}
             }
     	}
