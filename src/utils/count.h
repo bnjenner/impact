@@ -43,7 +43,9 @@ void getCounts(CharString gff_file, AlignmentFile &alignment, bool peak_detectio
                                                            start, stop, strand);
 
 
-        		std::cout << feature_name << ": " << num_alignments << std::endl; 
+        		std::cout << feature_name << ": " << num_alignments << std::endl;
+
+                i++;
 
         	}
 
@@ -60,8 +62,6 @@ void getCounts(CharString gff_file, AlignmentFile &alignment, bool peak_detectio
         	continue;
 
         }
-
-        i++;
 
     }
 

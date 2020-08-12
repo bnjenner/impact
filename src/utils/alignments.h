@@ -195,9 +195,8 @@ class AlignmentFile {
 	
 		    }
 
-		    // I obviously didn't do this right
 
-		    if (peak_detection && num_alignments > 10) {
+		    if (peak_detection && num_alignments > 50) {
 		   		 mappedCounts.fit(max_components); 
 		    }
 

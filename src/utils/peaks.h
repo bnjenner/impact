@@ -119,9 +119,9 @@ class MappingCounts {
 
         			status = model.learn(data, k, eucl_dist, random_subset, 10, 10, 1e-10, false);
 
-        			if (!status) {
-        				std::cerr << counts << "\n";
-        			}
+        			// if (!status) {
+        			// 	std::cerr << counts << "\n";
+        			// }
 
         			p = (2 * k) + k - 1;
 
@@ -137,14 +137,54 @@ class MappingCounts {
 
         		}
 
+
+                mean = sort(mean * data_norm, "ascend", 1);
+
+
+                for (int i = (mean.n_cols - 1); i > 0; i -= 1) {
+
+                    if (mean.at(0,i) == 0) {
+                        continue;
+                    }
+
+                    for (int j = (mean.n_cols - 1); j > -1; j -= 1) {
+ 
+
+                        if (counts.at(0, round(mean.at(0,j))) > counts.at(0, round(mean.at(0,i)))) {
+
+                            double temp = mean.at(0,i);
+                            mean.at(0,i) = mean.at(0,j);
+                            mean.at(0,j) = temp;
+
+                        }
+
+                        if (abs(mean.at(0,i) - mean.at(0,j)) <= 250 && i != j && mean.at(0,j) != 0) {
+
+                            mean.replace(mean.at(0,j), 0);
+                            best_k -= 1;
+
+                        }
+
+                    }
+
+                }
+
+
         		if (best_k > 0) {
 
     	    		std::cerr << "------\nName: " << feature_name << "\n";
-    	    		std::cerr << "Mean : " << (mean.at(0,0) * data_norm) + start;
-    	    		for (int i = 1; i < mean.n_cols; i++) {
-    	    			std::cerr << "\t" << (mean.at(0,i) * data_norm) + start;
-    				}
-    				std::cerr << "\n";
+                    
+    	    		for (int i = 0; i < mean.n_cols; i++) {
+
+                        if (mean.at(0,i) != 0) {
+
+                            std::cerr << "Mean: ";
+                            std::cerr << mean.at(0,i) + start << ", ";
+                            std::cerr << counts.at(0, round(mean.at(0,i))) << "\n";
+
+                        }
+                    }
+
     				std::cerr << "K: " << best_k << "\n";
     	    		std::cerr << "BIC: " << max_bic << "\n";
         		}
