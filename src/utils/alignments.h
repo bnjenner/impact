@@ -200,10 +200,6 @@ class AlignmentFile {
 		   		 mappedCounts.fit(max_components); 
 		    }
 
-		    if (mappedCounts.feature_name == "gl1315.NS.00615") {
-		    	mappedCounts.write();
-		    }
-
 		    // Return to beginnig 
 		    inFile.Rewind();
 

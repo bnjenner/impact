@@ -100,11 +100,12 @@ class MappingCounts {
             mat temp;
             data.set_size(1, 0);
 
-            double cutoff = (num_counts * 0.05);
+            double cutoff = round(num_counts * 0.05);
+
 
             for (uword i = 0; i < counts.n_cols; i++) {
 
-                if (counts[i] >= 10) {
+                if (counts[i] >= cutoff) {
                     mat temp(1, counts[i], fill::ones);
                     temp = temp * (i + 1);
 
@@ -114,8 +115,6 @@ class MappingCounts {
 
             if (data.n_cols > 0) {
 
-                //double data_norm = norm(data, 2);
-                //data = data / data_norm;
 
         		gmm_diag model;
 
@@ -150,15 +149,16 @@ class MappingCounts {
                 }
 
 
-
                 for (int i = 1; i < mean.n_cols; i++) {
+
 
                     if (mean.at(0,i) == 0) {
                         continue;
                     }
 
-                    for (int j = 0; j < mean.n_cols; j++) {
 
+
+                    for (int j = 0; j < mean.n_cols; j++) {
 
                         if (abs(mean.at(0,i) - mean.at(0,j)) <= 250 && i != j && mean.at(0,j) != 0) {
 
@@ -180,14 +180,12 @@ class MappingCounts {
 
                 }
 
-                // std::cerr << mean << "\n";
-
 
         		if (best_k > 0) {
                     
     	    		for (int i = 0; i < mean.n_cols; i++) {
 
-                        if (mean.at(0,i) > cutoff) {
+                        if (counts.at(0, round(mean.at(0,i))) > cutoff) {
 
                             int pos = round(mean.at(0,i));
                             int intensity = counts.at(0, pos);

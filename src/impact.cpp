@@ -143,21 +143,8 @@ int main(int argc, char const ** argv) {
         return res;
 
 
-    std::cerr << "----------\nIMPACT\n----------\n";
-    std::cerr << "Parameters:\n";
-    std::cerr << "  Alignment File: " << args.alignment_file << "\n";
-    std::cerr << "  Index File: " << args.index_file << "\n";
-    std::cerr << "  GFF File: " << args.gff_file << "\n";
-    std::cerr << "  Strandedness: " << args.strandedness << "\n";
-    std::cerr << "  Library: " << args.library_type << "\n";
-    std::cerr << "  Nonunique: " << args.nonunique_alignments << "\n";
-    std::cerr << "  Minimum MAPQ: " << args.mapq_min << "\n";
-    std::cerr << "  Peak Detection: " << args.peak_detection << "\n";
-    std::cerr << "  Max Components: " << args.max_components << "\n";
-    
-
-    std::cerr << "----------------------\n";
-    std::cerr << "Parsing Alignment File\n";
+    // std::cerr << "----------------------\n";
+    // std::cerr << "Parsing Alignment File\n";
 
     // Construct alignment object
     AlignmentFile alignment(args.alignment_file, args.index_file, 
@@ -166,11 +153,11 @@ int main(int argc, char const ** argv) {
     						args.peak_detection, args.max_components);
 
 
-    std::cerr << "--------------\n";
-    std::cerr << "Counting Reads\n";
+    // std::cerr << "--------------\n";
+    // std::cerr << "Counting Reads\n";
 
     // Count Reads
-   	getCounts(args.gff_file, alignment, args.peak_detection);
+   	int total_counts = getCounts(args.gff_file, alignment, args.peak_detection);
    	
 
     // Close alignment file
@@ -180,8 +167,29 @@ int main(int argc, char const ** argv) {
    	auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start); 
 
    
-	std::cerr << "-----------------\nProcess Complete!\n";
-	std::cerr << "Runtime: " << duration.count() << " seconds.\n";
+	// std::cerr << "-----------------\nProcess Complete!\n";
+	// std::cerr << "Runtime: " << duration.count() << " seconds.\n";
+
+
+    std::ofstream out_file;
+    out_file.open("impact_stats.txt");
+
+    // out_file << "----------\nIMPACT\n----------\n";
+    // out_file << "Parameters:\n";
+    // out_file << "  Alignment File: " << args.alignment_file << "\n";
+    // out_file << "  Index File: " << args.index_file << "\n";
+    // out_file << "  GFF File: " << args.gff_file << "\n";
+    // out_file << "  Strandedness: " << args.strandedness << "\n";
+    // out_file << "  Library: " << args.library_type << "\n";
+    // out_file << "  Nonunique: " << args.nonunique_alignments << "\n";
+    // out_file << "  Minimum MAPQ: " << args.mapq_min << "\n";
+    // out_file << "  Peak Detection: " << args.peak_detection << "\n";
+    // out_file << "  Max Components: " << args.max_components << "\n";
+    // out_file << "----------------------\n";
+    out_file << "Total Counts: " << total_counts << "\n";
+    out_file << "Runtime: " << duration.count() << " seconds.\n";
+
+    out_file.close();   
 
     return 0;
 

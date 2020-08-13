@@ -3,7 +3,7 @@
 using namespace seqan;
 
 // Iterate Through GFF
-void getCounts(CharString gff_file, AlignmentFile &alignment, bool peak_detection) {
+int getCounts(CharString gff_file, AlignmentFile &alignment, bool peak_detection) {
 	
 	// Read in GFF
     GffFileIn gffIn;
@@ -26,6 +26,8 @@ void getCounts(CharString gff_file, AlignmentFile &alignment, bool peak_detectio
     int start;
     int stop;
 
+    int total_counts = 0;
+
     while (!atEnd(gffIn)) {
 
         readRecord(record, gffIn);
@@ -45,6 +47,7 @@ void getCounts(CharString gff_file, AlignmentFile &alignment, bool peak_detectio
 
         		std::cout << feature_name << ": " << num_alignments << std::endl;
 
+                total_counts += num_alignments;
                 i++;
 
         	}
@@ -66,4 +69,6 @@ void getCounts(CharString gff_file, AlignmentFile &alignment, bool peak_detectio
     }
 
     std::cout << feature_name << ": " << num_alignments << std::endl; 
+
+    return total_counts;
 }
