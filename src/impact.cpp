@@ -29,7 +29,7 @@ struct ImpactArguments
 ArgumentParser::ParseResult argparse(int argc, char const ** argv, ImpactArguments & args) {
 	// Setup ArgumentParser.
     ArgumentParser parser("impact");
-    addDescription(parser, "Generates read counts from TAGseq experiments and identifies terminal exon isoforms.");
+    addDescription(parser, "Generates read counts and identifies peaks in mapped reads from TAGseq experiments.");
 
 	// Define Options
     addArgument(parser, seqan::ArgParseArgument(

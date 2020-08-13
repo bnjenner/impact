@@ -76,7 +76,7 @@ class MappingCounts {
 			out_file.open(feature_name + ".txt");
 
 			for (int i = 0; i <= counts.n_cols; i++) {
-                
+
                 int temp = round(counts.at(0,i));
 				out_file << temp << std::endl;
 			}
@@ -104,7 +104,7 @@ class MappingCounts {
 
             for (uword i = 0; i < counts.n_cols; i++) {
 
-                if (counts[i] >= cutoff) {
+                if (counts[i] >= 10) {
                     mat temp(1, counts[i], fill::ones);
                     temp = temp * (i + 1);
 
@@ -122,7 +122,7 @@ class MappingCounts {
 
         		for (int k = 1; k <= max_components; k++ ) {
 
-        			status = model.learn(data, k, eucl_dist, random_subset, 0, 10, 1e-10, false);
+        			status = model.learn(data, k, eucl_dist, random_spread, 0, 10, 1e-10, false);
 
         			if (!status) {
         				continue;
