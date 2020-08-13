@@ -11,19 +11,18 @@ class MappingCounts {
 
 	// Attributes
 		std::string feature_name;
-        char strand;
 		int start;
 		int stop;
 		int length;
 
 		mat counts;
+        int num_counts = 0;
 
     // Inialize
-    	MappingCounts(std::string feat_name, char pre_strand, int interval_start, int interval_stop) {
+    	MappingCounts(std::string feat_name, int interval_start, int interval_stop) {
 
     		// Set Attributes
     		feature_name = feat_name;
-            strand = pre_strand;
     		start = interval_start;
     		stop = interval_stop;
     		length = stop - start + 1;
@@ -61,6 +60,7 @@ class MappingCounts {
 			mat read = join_rows(join_rows(unmapped_pre, mapped), unmapped_post);
 
     		counts = counts + read;
+            num_counts ++;
 
     	}
 
@@ -76,7 +76,9 @@ class MappingCounts {
 			out_file.open(feature_name + ".txt");
 
 			for (int i = 0; i <= counts.n_cols; i++) {
-				out_file << counts.at(0,i) << std::endl;
+                
+                int temp = round(counts.at(0,i));
+				out_file << temp << std::endl;
 			}
 
 			out_file.close();	
@@ -92,16 +94,17 @@ class MappingCounts {
     		int best_k = 0;
     		int p;
     		mat mean;
+            mat cov;
 
             mat data;
             mat temp;
             data.set_size(1, 0);
 
-            
+            double cutoff = (num_counts * 0.05);
 
             for (uword i = 0; i < counts.n_cols; i++) {
 
-                if (counts[i] > 10) {
+                if (counts[i] >= cutoff) {
                     mat temp(1, counts[i], fill::ones);
                     temp = temp * (i + 1);
 
@@ -111,8 +114,8 @@ class MappingCounts {
 
             if (data.n_cols > 0) {
 
-                double data_norm = norm(data, 2);
-                data = data / data_norm;
+                //double data_norm = norm(data, 2);
+                //data = data / data_norm;
 
         		gmm_diag model;
 
@@ -124,7 +127,7 @@ class MappingCounts {
         			if (!status) {
         				continue;
         			}
-                   
+                    
         			p = (2 * k) + k - 1;
 
     				likelihood = model.sum_log_p(data);
@@ -135,6 +138,7 @@ class MappingCounts {
     					max_bic = bic;
     					best_k = k;
     					mean = model.means;
+                        cov = model.dcovs;
     				}
 
         		}
@@ -145,29 +149,29 @@ class MappingCounts {
                     return;
                 }
 
-                mean = sort(mean * data_norm, "ascend", 1);
 
 
-                for (int i = (mean.n_cols - 1); i > 0; i -= 1) {
+                for (int i = 1; i < mean.n_cols; i++) {
 
                     if (mean.at(0,i) == 0) {
                         continue;
                     }
 
-                    for (int j = (mean.n_cols - 1); j > -1; j -= 1) {
- 
+                    for (int j = 0; j < mean.n_cols; j++) {
 
-                        if (counts.at(0, round(mean.at(0,j))) > counts.at(0, round(mean.at(0,i)))) {
-
-                            double temp = mean.at(0,i);
-                            mean.at(0,i) = mean.at(0,j);
-                            mean.at(0,j) = temp;
-
-                        }
 
                         if (abs(mean.at(0,i) - mean.at(0,j)) <= 250 && i != j && mean.at(0,j) != 0) {
 
-                            mean.replace(mean.at(0,j), 0);
+                            if (counts.at(0, round(mean.at(0,j))) < counts.at(0, round(mean.at(0,i)))) {
+
+                                mean.replace(mean.at(0,j), 0);
+
+                            } else {
+
+                                mean.replace(mean.at(0,i), 0);
+
+                            }
+
                             best_k -= 1;
 
                         }
@@ -176,20 +180,23 @@ class MappingCounts {
 
                 }
 
+                // std::cerr << mean << "\n";
+
 
         		if (best_k > 0) {
                     
     	    		for (int i = 0; i < mean.n_cols; i++) {
 
-                        if (mean.at(0,i) != 0) {
+                        if (mean.at(0,i) > cutoff) {
 
                             int pos = round(mean.at(0,i));
                             int intensity = counts.at(0, pos);
+                            double var = sqrt(cov.at(0, i) / best_k);
 
                             std::cerr << feature_name << "\t";
-                            std::cerr << strand << "\t";
                             std::cerr << std::fixed << pos + start << "\t";
-                            std::cerr << std::fixed << intensity << "\n";
+                            std::cerr << std::fixed << intensity << "\t";
+                            std::cerr << std::setprecision(2) << var << "\n";
 
 
                         }

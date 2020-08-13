@@ -36,7 +36,7 @@ void getCounts(CharString gff_file, AlignmentFile &alignment, bool peak_detectio
         	if (feature_name != "") {
 
 
-        		MappingCounts mappedCounts(toCString(feature_name), strand, start, stop);
+        		MappingCounts mappedCounts(toCString(feature_name), start, stop);
 
 
         		num_alignments += alignment.findAlignments(mappedCounts, toCString(contig), 
