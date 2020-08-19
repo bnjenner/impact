@@ -44,7 +44,9 @@ int getCounts(AnnotationFile &annotation, AlignmentFile &alignment, bool peak_de
 
         } else {
 
-        	stop = feat_obj.stop;
+        	if (feat_obj.stop > stop) {
+	        	stop = feat_obj.stop;
+	        }
 
         }
 
