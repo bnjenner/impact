@@ -1,6 +1,4 @@
-#include <fstream>
 #include <armadillo>
-#include <math.h>
 
 using namespace arma;
 
@@ -96,112 +94,112 @@ class MappingCounts {
     		mat mean;
             mat cov;
 
-            mat data;
-            mat temp;
-            data.set_size(1, 0);
+        //     mat data;
+        //     mat temp;
+        //     data.set_size(1, 0);
 
-            double cutoff = round(num_counts * 0.05);
-
-
-            for (uword i = 0; i < counts.n_cols; i++) {
-
-                if (counts[i] >= cutoff) {
-                    mat temp(1, counts[i], fill::ones);
-                    temp = temp * (i + 1);
-
-                    data = join_rows(data, temp);
-                }
-            }
-
-            if (data.n_cols > 0) {
+        //     double cutoff = round(num_counts * 0.05);
 
 
-        		gmm_diag model;
+        //     for (uword i = 0; i < counts.n_cols; i++) {
+
+        //         if (counts[i] >= 1) {
+        //             mat temp(1, counts[i], fill::ones);
+        //             temp = temp * (i + 1);
+
+        //             data = join_rows(data, temp);
+        //         }
+        //     }
+
+        //     if (data.n_cols > 0) {
 
 
-        		for (int k = 1; k <= max_components; k++ ) {
+        // 		gmm_diag model;
 
-        			status = model.learn(data, k, eucl_dist, random_spread, 0, 10, 1e-10, false);
 
-        			if (!status) {
-        				continue;
-        			}
+        // 		for (int k = 1; k <= max_components; k++ ) {
+
+        // 			status = model.learn(data, k, eucl_dist, random_spread, 0, 15, 1e-10, false);
+
+        // 			if (!status) {
+        // 				continue;
+        // 			}
                     
-        			p = (2 * k) + k - 1;
+        // 			p = (2 * k) + k - 1;
 
-    				likelihood = model.sum_log_p(data);
+    				// likelihood = model.sum_log_p(data);
 
-    				bic = (2 * likelihood) - (p  * log(data.n_cols)); // Liklihood penalized by complexity
+    				// bic = (2 * likelihood) - (p  * log(data.n_cols)); // Liklihood penalized by complexity
 
-    				if (max_bic < bic || k == 1) {
-    					max_bic = bic;
-    					best_k = k;
-    					mean = model.means;
-                        cov = model.dcovs;
-    				}
+    				// if (max_bic < bic || k == 1) {
+    				// 	max_bic = bic;
+    				// 	best_k = k;
+    				// 	mean = model.means;
+        //                 cov = model.dcovs;
+    				// }
 
-        		}
+        // 		}
 
-                // Check if any models ran.
-                if (best_k == 0) {
-                    std::cerr << "ERROR: No model could be fit to reads for gene: " << feature_name << ".\n";
-                    return;
-                }
-
-
-                for (int i = 1; i < mean.n_cols; i++) {
+        //         // Check if any models ran.
+        //         if (best_k == 0) {
+        //             std::cerr << "ERROR: No model could be fit to reads for gene: " << feature_name << ".\n";
+        //             return;
+        //         }
 
 
-                    if (mean.at(0,i) == 0) {
-                        continue;
-                    }
+                // for (int i = 1; i < mean.n_cols; i++) {
+
+
+                //     if (mean.at(0,i) == 0) {
+                //         continue;
+                //     }
 
 
 
-                    for (int j = 0; j < mean.n_cols; j++) {
+                //     for (int j = 0; j < mean.n_cols; j++) {
 
-                        if (abs(mean.at(0,i) - mean.at(0,j)) <= 250 && i != j && mean.at(0,j) != 0) {
+                //         if (abs(mean.at(0,i) - mean.at(0,j)) <= 250 && i != j && mean.at(0,j) != 0) {
 
-                            if (counts.at(0, round(mean.at(0,j))) < counts.at(0, round(mean.at(0,i)))) {
+                //             if (counts.at(0, round(mean.at(0,j))) < counts.at(0, round(mean.at(0,i)))) {
 
-                                mean.replace(mean.at(0,j), 0);
+                //                 mean.replace(mean.at(0,j), 0);
 
-                            } else {
+                //             } else {
 
-                                mean.replace(mean.at(0,i), 0);
+                //                 mean.replace(mean.at(0,i), 0);
 
-                            }
+                //             }
 
-                            best_k -= 1;
+                //             best_k -= 1;
 
-                        }
+                //         }
 
-                    }
+                //     }
 
-                }
+                // }
 
 
-        		if (best_k > 0) {
+        		// if (best_k > 0) {
                     
-    	    		for (int i = 0; i < mean.n_cols; i++) {
+    	    	// 	for (int i = 0; i < mean.n_cols; i++) {
 
-                        if (counts.at(0, round(mean.at(0,i))) > cutoff) {
+          //               if (counts.at(0, round(mean.at(0,i))) > cutoff) {
 
-                            int pos = round(mean.at(0,i));
-                            int intensity = counts.at(0, pos);
-                            double var = sqrt(cov.at(0, i) / best_k);
+          //                   int pos = round(mean.at(0,i));
+          //                   int intensity = counts.at(0, pos);
+          //                   double var = sqrt(cov.at(0, i) / best_k);
 
-                            std::cerr << feature_name << "\t";
-                            std::cerr << std::fixed << pos + start << "\t";
-                            std::cerr << std::fixed << intensity << "\t";
-                            std::cerr << std::setprecision(2) << var << "\n";
+          //                   std::cerr << feature_name << "\t";
+          //                   std::cerr << std::fixed << pos + start << "\t";
+          //                   std::cerr << std::fixed << intensity << "\t";
+          //                   std::cerr << std::setprecision(2) << var << "\n";
 
 
-                        }
-                    }
+          //               }
+          //           }
 
-        		}
-            }
+        		// }
+            // }
     	}
 
 };

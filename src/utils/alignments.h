@@ -1,7 +1,4 @@
 #include "api/BamReader.h"
-#include <vector>
-#include <math.h>
-#include <unordered_map>
 
 using namespace BamTools;
 
@@ -19,8 +16,6 @@ class AlignmentFile {
     	std::string library_type;		// library type
     	bool nonunique_alignments;		// consider secondary alignments 
     	int mapq;						// minimum mapping quality
-    	bool peak_detection;			// peak detection
-    	int max_components;				// max components for GMM
 
     	// Counts
    		int unmapped = 0;    			// unmapped reads
@@ -32,27 +27,22 @@ class AlignmentFile {
 
 
     // Inialize
-    	AlignmentFile(std::string bam_file, std::string index_file, 
-    				  std::string pre_strandedness, std::string pre_library_type, 
-    				  int pre_mapq, bool pre_nonunique_alignments,
-    				  bool pre_peak_detection, int pre_max_components) {
+    	AlignmentFile(const ImpactArguments args) {
 
     		// Set Attributes
-    		strandedness = pre_strandedness;
-    		library_type = pre_library_type;
-    		nonunique_alignments = pre_nonunique_alignments;
-    		mapq = pre_mapq;
-    		peak_detection = pre_peak_detection;
-    		max_components = pre_max_components;
+    		strandedness = args.strandedness;
+    		library_type = args.library_type;
+    		nonunique_alignments = args.nonunique_alignments;
+    		mapq = args.mapq_min;
 
 
-    		if (!inFile.Open(bam_file)) {
-		        std::cerr << "ERROR: Could not read alignment file: " << bam_file << "\n";
+    		if (!inFile.Open(args.alignment_file)) {
+		        std::cerr << "ERROR: Could not read alignment file: " << args.alignment_file << "\n";
 		        throw "ERROR: Could not read alignment file.";
 		    }
 
-		    if (!inFile.OpenIndex(index_file)) {
-		        std::cerr << "ERROR: Could not read index file: " << index_file << "\n";
+		    if (!inFile.OpenIndex(args.index_file)) {
+		        std::cerr << "ERROR: Could not read index file: " << args.index_file << "\n";
 		        throw "ERROR: Could not read index file";
 		    }
 
@@ -107,8 +97,8 @@ class AlignmentFile {
 		        // }
 		    }  
 
-		    std::cout << "Unmapped: " << unmapped << std::endl;
-		    std::cout << "Multimapped: " << multimapped << std::endl;
+		    // std::cerr << "Unmapped: " << unmapped << std::endl;
+		    // std::cerr << "Multimapped: " << multimapped << std::endl;
 
 		   	// Jump to the first entry in file
 		   	inFile.Rewind(); 	
@@ -117,12 +107,15 @@ class AlignmentFile {
 
     // Methods
 
+		// close file
 		void close() {
 
 			inFile.Close();
 
 		}
-//     	// head Bam
+
+		
+	   	// head Bam
 		void head() {
 
 			int i = 0;
@@ -187,18 +180,18 @@ class AlignmentFile {
 		        }
 
 		        
-		        if (peak_detection) {
-		        	mappedCounts.addRead(alignment.Position, alignment.GetEndPosition());
-		        }
+		        // if (peak_detection) {
+		        // 	mappedCounts.addRead(alignment.Position, alignment.GetEndPosition());
+		        // }
 
 		        num_alignments++;
 	
 		    }
 
 
-		    if (peak_detection && num_alignments > 50) {
-		   		 mappedCounts.fit(max_components); 
-		    }
+		    // if (peak_detection && num_alignments > 50) {
+		   	// 	 mappedCounts.fit(max_components); 
+		    // }
 
 		    // Return to beginnig 
 		    inFile.Rewind();

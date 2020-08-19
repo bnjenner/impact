@@ -1,25 +1,11 @@
-#include <seqan/gff_io.h>
 
-using namespace seqan;
 
-// Iterate Through GFF
-int getCounts(CharString gff_file, AlignmentFile &alignment, bool peak_detection) {
+// // Iterate Through GFF
+int getCounts(AnnotationFile &annotation, AlignmentFile &alignment, bool peak_detection) {
 	
-	// Read in GFF
-    GffFileIn gffIn;
-    if (!open(gffIn, toCString(gff_file))) {
-        std::cerr << "ERROR: Could not read gff file: " << gff_file << "\n";
-		throw "ERROR: Could not read gff file.";
-    }
-
-    // Attach to standard output.
-    GffFileOut gffOut(std::cout, Gff());
-
-    // Copy the file record by record.
-    GffRecord record;
-
-    CharString feature_name = "";
-    CharString contig;
+	Feature feat_obj;
+	std::string feature_name = "";
+	std::string contig;
     char strand;
     int num_alignments = 0;
     int i = 0;
@@ -28,47 +14,43 @@ int getCounts(CharString gff_file, AlignmentFile &alignment, bool peak_detection
 
     int total_counts = 0;
 
-    while (!atEnd(gffIn)) {
+    while (i <= annotation.total_features) {
 
-        readRecord(record, gffIn);
+		feat_obj = annotation.feature_cache[i];
 
+        if (feature_name != feat_obj.name || i == annotation.total_features) {
 
-        if (feature_name != record.tagValues[0]) {
-
-        	if (feature_name != "") {
-
-
-        		MappingCounts mappedCounts(toCString(feature_name), start, stop);
+        	if (feature_name != "" || i == annotation.total_features) {
 
 
-        		num_alignments += alignment.findAlignments(mappedCounts, toCString(contig), 
-                                                           start, stop, strand);
+        		MappingCounts mappedCounts(feature_name, start, stop);
+
+
+        		num_alignments += alignment.findAlignments(mappedCounts, contig, start, stop, strand);
 
 
         		std::cout << feature_name << ": " << num_alignments << std::endl;
 
                 total_counts += num_alignments;
-                i++;
 
         	}
 
         	num_alignments = 0;
-        	feature_name = record.tagValues[0];
-        	contig = record.ref;
-        	strand = record.strand;
-        	start = record.beginPos;
-        	stop = record.endPos;
+        	feature_name = feat_obj.name;
+        	contig = feat_obj.contig;
+        	strand = feat_obj.strand;
+        	start = feat_obj.start;
+        	stop = feat_obj.stop;
 
         } else {
 
-        	stop = record.endPos;
-        	continue;
+        	stop = feat_obj.stop;
 
         }
 
-    }
+        i++;
 
-    std::cout << feature_name << ": " << num_alignments << std::endl; 
+    } 
 
     return total_counts;
 }
