@@ -10,6 +10,7 @@ project (impact CXX)
 find_package (ZLIB)
 find_package (SeqAn REQUIRED)
 find_package(Armadillo REQUIRED)
+find_package (Threads)
 
 include_directories("${PROJECT_SOURCE_DIR}/src")
 include_directories("${PROJECT_SOURCE_DIR}/lib/")

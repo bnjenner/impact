@@ -1,86 +1,3 @@
-// Run of the mill split function
-std::vector<std::string> split_gff(std::string line, char d) {
-
-	std::vector<std::string> cols;
-	std::string col = "";
-
-	for (char c: line) {
-
-		if (c == d) { 
-
-	    	cols.push_back(col); 
-	    	col = ""; 
-
-		} else { 
-
-	    	col = col + c;
-
-		} 
-	}  
-
-	if (col != "") {
-		cols.push_back(col); 
-	}
-
-	return cols;
-
-}
-
-
-std::string get_id(std::string line, std::string file_suffix) {
-
-	std::string id = "";
-	std::string tag;
-	std::string prev;
-	char sep;
-	int n;
-
-	if (file_suffix == ".gtf") {
-
-		tag = "gene_id";
-		prev = "XXXXXXX";
-		sep = ' ';
-		n = 6;
-
-	} else {
-
-		tag = "ID";
-		prev = "XX";
-		sep = '=';
-		n = 2;
-
-	}
-
-
-	bool record = false;
-
-	for (char c: line) {
-
-		if (c == sep && prev == tag) { 
-
-			//std::cout << "got em\n";
-
-			record = true;
-
-		} else if (record == true && c != '\'' && c != '\"' && c != ' '){
-
-			if (c == ';' && record == true) {
-				break;
-			} 
-			
-			id = id + c;
-
-		} else {
-
-			prev = prev.substr(1,n) + c; 
-		
-		}
-	}  
-
-	return id;
-
-}
-
 class Feature {
 
 	public:
@@ -126,7 +43,7 @@ class Feature {
 };
 
 
-// Alignment Class
+// Annotation Class
 class  AnnotationFile {
 
 	public:
@@ -138,7 +55,9 @@ class  AnnotationFile {
     	std::vector<Feature> feature_cache; 	// Unordered map 
 
 
-    // Initialize
+    // Constructor
+    	AnnotationFile() {}
+
     	AnnotationFile(const ImpactArguments args) {
 
     		// Set Attributes
@@ -150,9 +69,15 @@ class  AnnotationFile {
 		        c = ::tolower(c);
 		    });
 
-    		// Get # Lines 
+		}
+
+
+	// Methods
+		void open() {
+
+			// Get # Lines 
 			std::string line;
-			std::ifstream gff_file (args.gff_file);
+			std::ifstream gff_file (file_name);
 
 			if (gff_file.is_open()) {
 
@@ -169,7 +94,6 @@ class  AnnotationFile {
 
 				gff_file.close();
 			}
-
 		}
 
 };

@@ -24,7 +24,7 @@ struct ImpactArguments {
 /////////////////////////////////////// 
 // Argument Parser
 
-ArgumentParser::ParseResult argparse(int argc, char const ** argv, ImpactArguments & args) {
+ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArguments &args) {
 	// Setup ArgumentParser.
     ArgumentParser parser("impact");
     addDescription(parser, "Generates read counts and identifies peaks in mapped reads from TAGseq experiments.");

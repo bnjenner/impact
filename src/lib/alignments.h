@@ -8,7 +8,9 @@ class AlignmentFile {
 	public:
 
 	// Attributes
-		BamReader inFile;				// Bam File Object
+		std::string file_name;			// Bam File Name 
+		std::string index_file;			// Bam index File Name
+		BamReader inFile;				// Bam File Objec
 		BamAlignment alignment;			// BamAlignmentRecord record;		
 
     	// Program options 
@@ -26,31 +28,41 @@ class AlignmentFile {
     	std::unordered_map<std::string,int> contig_cache; 	// Unordered map 
 
 
-    // Inialize
+    // Constructors
+    	AlignmentFile() {}
+
     	AlignmentFile(const ImpactArguments args) {
 
     		// Set Attributes
+    		file_name = args.alignment_file;
+    		index_file = args.index_file;
     		strandedness = args.strandedness;
     		library_type = args.library_type;
     		nonunique_alignments = args.nonunique_alignments;
     		mapq = args.mapq_min;
 
+    	}
 
-    		if (!inFile.Open(args.alignment_file)) {
-		        std::cerr << "ERROR: Could not read alignment file: " << args.alignment_file << "\n";
-		        throw "ERROR: Could not read alignment file.";
-		    }
 
-		    if (!inFile.OpenIndex(args.index_file)) {
-		        std::cerr << "ERROR: Could not read index file: " << args.index_file << "\n";
-		        throw "ERROR: Could not read index file";
-		    }
+    // Methods
 
-		    // if (!inFile.SetRegion(0, 2311417, 0, 2313233)) {
-		    // 	std::cerr << "ERROR: Unable to jump to region.\n";
-		    // }
+    	void open() {
 
-		    SamHeader head = inFile.GetHeader();
+			if (!inFile.Open(file_name)) {
+			    std::cerr << "ERROR: Could not read alignment file: " << file_name << "\n";
+			    throw "ERROR: Could not read alignment file.";
+			}
+
+			if (!inFile.OpenIndex(index_file)) {
+			    std::cerr << "ERROR: Could not read index file: " << index_file << "\n";
+			    throw "ERROR: Could not read index file";
+			}
+
+			// if (!inFile.SetRegion(0, 2311417, 0, 2313233)) {
+			// 	std::cerr << "ERROR: Unable to jump to region.\n";
+			// }
+
+			SamHeader head = inFile.GetHeader();
 			if (head.HasSortOrder()) {
 
 				std::string sortOrder = head.SortOrder;
@@ -73,39 +85,37 @@ class AlignmentFile {
 				contig_cache[references.at(i).RefName] = i;
 
 			}
-			
+
 
 			while (inFile.GetNextAlignment(alignment)) {
 
 				 if (!alignment.IsMapped()) {
-		        	unmapped++;
-		        	continue;
-		        } 
+			    	unmapped++;
+			    	continue;
+			    } 
 
-		        // PSEUDO CODE 
-		        // if (record.qual <= mapq && countedID(record.rID) == False) {
-		        // 	low_qual++;
-		        // 	continue;
-		        // } 
+			    // PSEUDO CODE 
+			    // if (record.qual <= mapq && countedID(record.rID) == False) {
+			    // 	low_qual++;
+			    // 	continue;
+			    // } 
 
-		        // HOW TO ADDRESS MULTIMAPPING AND OVERLAPS?
+			    // HOW TO ADDRESS MULTIMAPPING AND OVERLAPS?
 
-		        // PSEUDO CODE
-		        // if (hasFlagMultiple(record) && nonunique-alignments && countedID(record.rID) == False){
-		        // 	multimapped++;
-		        // 	continue;
-		        // }
-		    }  
+			    // PSEUDO CODE
+			    // if (hasFlagMultiple(record) && nonunique-alignments && countedID(record.rID) == False){
+			    // 	multimapped++;
+			    // 	continue;
+			    // }
+			}  
 
-		    // std::cerr << "Unmapped: " << unmapped << std::endl;
-		    // std::cerr << "Multimapped: " << multimapped << std::endl;
+			// std::cerr << "Unmapped: " << unmapped << std::endl;
+			// std::cerr << "Multimapped: " << multimapped << std::endl;
 
-		   	// Jump to the first entry in file
-		   	inFile.Rewind(); 	
+			// Jump to the first entry in file
+			inFile.Rewind(); 	
 
 		}
-
-    // Methods
 
 		// close file
 		void close() {
@@ -133,8 +143,7 @@ class AlignmentFile {
 
 
 		// Grab Alignments within Interval Using Bam Index
-		int findAlignments(MappingCounts &mappedCounts, std::string ref, int beginPos, int endPos, 
-						   char strand) {
+		int findAlignments(MappingCounts &mappedCounts, std::string ref, int beginPos, int endPos, char strand) {
 
 		    // 1-based to 0-based.
 

@@ -2,13 +2,24 @@
 #include <chrono> 
 #include <string>
 #include <vector>
+#include <thread>
+#include <future>
 #include <math.h>
 #include <fstream>
-#include "utils/parser.h"
-#include "utils/peaks.h"
-#include "utils/alignments.h"
-#include "utils/annotations.h"
-#include "utils/count.h"
+#include "lib/parser.h"
+#include "lib/utils.h"
+#include "lib/peaks.h"
+#include "lib/alignments.h"
+#include "lib/annotations.h"
+#include "lib/count.h"
+
+void open_alignment(AlignmentFile *alignment) {
+    alignment -> open();
+}
+
+void open_annotation(AnnotationFile *annotation) {
+    annotation -> open();
+}
 
 
 // Main 
@@ -26,21 +37,26 @@ int main(int argc, char const ** argv) {
     }
 
     
-    std::cerr << "[ IMPACT ]\n";
+    std::cerr << "[IMPACT]\n";
 
-    // Construct alignment object
-    std::cerr << "[ Parsing Alignment File... ]\n";
+    std::cerr << "[Parsing Input Files...]\n";
+
+    // Construct alignment object in thread
     AlignmentFile alignment(args);
+    std::thread align_thread(open_alignment, &alignment);
 
-
-    // Construct annotation object
-    std::cerr << "[ Parsing Annotation File... ]\n";
+    // Construct annotation object in thread
     AnnotationFile annotation(args);
+    std::thread annotate_thread(open_annotation, &annotation);
+
+    // join threads
+    align_thread.join();
+    annotate_thread.join();
 
 
-    // Count Reads
-    std::cerr << "[ Counting Reads... ]\n";
-   	int total_counts = getCounts(annotation, alignment, args.peak_detection);
+    // // Count Reads
+    // std::cerr << "[ Counting Reads... ]\n";
+   	// int total_counts = getCounts(annotation, alignment, args.peak_detection);
    	
 
     // Close alignment file
