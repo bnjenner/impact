@@ -1,10 +1,11 @@
 // Run of the mill split function
-std::vector<std::string> split_gff(std::string line, char d) {
+std::vector<std::string> split_gff(const std::string *line, char d) {
+
 
 	std::vector<std::string> cols;
 	std::string col = "";
 
-	for (char c: line) {
+	for (char c: *line) {
 
 		if (c == d) { 
 
@@ -28,7 +29,7 @@ std::vector<std::string> split_gff(std::string line, char d) {
 
 
 // Parse GFF annotation for ID 
-std::string get_id(std::string line, std::string file_suffix) {
+std::string get_id(const std::string *line, const std::string *file_suffix) {
 
 	std::string id = "";
 	std::string tag;
@@ -37,7 +38,7 @@ std::string get_id(std::string line, std::string file_suffix) {
 	int n;
 
 	// Check for gff of gtf
-	if (file_suffix == ".gtf") {
+	if (*file_suffix == ".gtf") {
 
 		tag = "gene_id";
 		prev = "XXXXXXX";
@@ -56,7 +57,7 @@ std::string get_id(std::string line, std::string file_suffix) {
 
 	bool record = false;
 
-	for (char c: line) {
+	for (char c: *line) {
 
 		if (c == sep && prev == tag) { 
 

@@ -33,7 +33,7 @@ int main(int argc, char const ** argv) {
 
 	// Return Error if Parsing Error
     if (res != seqan::ArgumentParser::PARSE_OK) {
-            return res;AlignmentFile alignment(args);
+            return res;
     }
 
     
@@ -42,11 +42,11 @@ int main(int argc, char const ** argv) {
     std::cerr << "[Parsing Input Files...]\n";
 
     // Construct alignment object in thread
-    AlignmentFile alignment(args);
+    AlignmentFile alignment(&args);
     std::thread align_thread(open_alignment, &alignment);
 
     // Construct annotation object in thread
-    AnnotationFile annotation(args);
+    AnnotationFile annotation(&args);
     std::thread annotate_thread(open_annotation, &annotation);
 
     // join threads
@@ -86,8 +86,8 @@ int main(int argc, char const ** argv) {
     // out_file << "  Max Components: " << args.max_components << "\n";
     // out_file << "----------------------\n";
     // out_file << "Total Counts: " << total_counts << "\n";
-    std::cerr << "[ Program Complete! ]\n";
-    std::cerr << "[ Runtime: " << duration.count() << " seconds ]\n";
+    std::cerr << "[Program Complete!]\n";
+    std::cerr << "[Runtime: " << duration.count() << " seconds]\n";
 
     // out_file.close();   
 

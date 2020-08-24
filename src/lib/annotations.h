@@ -13,11 +13,12 @@ class Feature {
 
 		Feature() {}
 
-		Feature(std::string line, std::string file_suffix) {
+		Feature(const std::string *line, const std::string *file_suffix) {
 
+			// Found in lib/utils.H
 			std::vector<std::string> split = split_gff(line, '\t');
 
-			name = get_id(split[8], file_suffix);
+			name = get_id(&split[8], file_suffix);
 	    	type = split[3];
 	    	contig = split[0];
 	    	strand = split[6][0];
@@ -58,10 +59,10 @@ class  AnnotationFile {
     // Constructor
     	AnnotationFile() {}
 
-    	AnnotationFile(const ImpactArguments args) {
+    	AnnotationFile(const ImpactArguments *args) {
 
-    		// Set Attributes
-    		file_name = args.gff_file;
+    		// set attributes
+    		file_name = args -> gff_file;
     		file_suffix = file_name.substr(file_name.length() - 4, 4);
 
     		// make lowercase
@@ -75,7 +76,7 @@ class  AnnotationFile {
 	// Methods
 		void open() {
 
-			// Get # Lines 
+			// parse annotation file 
 			std::string line;
 			std::ifstream gff_file (file_name);
 
@@ -85,8 +86,8 @@ class  AnnotationFile {
 
 					if (line.substr(0,2) != "##") {
 
-						Feature feature_obj(line, file_suffix);
-						feature_cache.push_back(feature_obj);
+						//Feature feature_obj(&line, &file_suffix);
+						feature_cache.emplace_back(&line, &file_suffix);
 						total_features++;
 
 					}
@@ -94,6 +95,9 @@ class  AnnotationFile {
 
 				gff_file.close();
 			}
+
+			feature_cache[0].print();
+			feature_cache[total_features - 1].print();
 		}
 
 };

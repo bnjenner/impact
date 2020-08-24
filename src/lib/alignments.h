@@ -31,15 +31,15 @@ class AlignmentFile {
     // Constructors
     	AlignmentFile() {}
 
-    	AlignmentFile(const ImpactArguments args) {
+    	AlignmentFile(const ImpactArguments *args) {
 
     		// Set Attributes
-    		file_name = args.alignment_file;
-    		index_file = args.index_file;
-    		strandedness = args.strandedness;
-    		library_type = args.library_type;
-    		nonunique_alignments = args.nonunique_alignments;
-    		mapq = args.mapq_min;
+    		file_name = args -> alignment_file;
+    		index_file = args -> index_file;
+    		strandedness = args -> strandedness;
+    		library_type = args -> library_type;
+    		nonunique_alignments = args -> nonunique_alignments;
+    		mapq = args -> mapq_min;
 
     	}
 
