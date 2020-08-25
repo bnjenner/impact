@@ -10,7 +10,6 @@ struct ImpactArguments {
     std::string alignment_file;    	// sam or bam file
     std::string index_file;    			// index file
     std::string gff_file;      			// gff file
-    std::string strandedness;           // library strandedness
     std::string library_type;           // library type (SE or PE)
     bool nonunique_alignments;			// count primary and secondary alignments
     int mapq_min;						// minimum mapq score
@@ -36,12 +35,6 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
     addArgument(parser, seqan::ArgParseArgument(
         ArgParseArgument::INPUT_FILE, "GFF"));
 
-      // Strandedness 
-    addOption(parser, seqan::ArgParseOption(
-        "s", "strandedness", "Strandedness of library.",
-        ArgParseArgument::STRING, "STRING"));
-    setDefaultValue(parser, "strandedness", "forward");
-    setValidValues(parser, "strandedness", "forward reverse unstranded");
 
       // Library Type
     addOption(parser, seqan::ArgParseOption(
@@ -59,7 +52,7 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
 	    "q", "mapq-min",
 	    "Minimum mapping quality score to consider for counts.",
 	    ArgParseArgument::INTEGER, "INT"));
-	setDefaultValue(parser, "mapq-min", "-1");
+	setDefaultValue(parser, "mapq-min", "1");
 
 	  // Find 
 	addOption(parser, seqan::ArgParseOption(
@@ -123,7 +116,6 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
 
 
 	// Options
-    getOptionValue(args.strandedness, parser, "strandedness");
     getOptionValue(args.library_type, parser, "library-type");
 	args.nonunique_alignments = isSet(parser, "nonunique-alignments");
    	getOptionValue(args.mapq_min, parser, "mapq-min");

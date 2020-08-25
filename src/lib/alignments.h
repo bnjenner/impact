@@ -14,7 +14,6 @@ class AlignmentFile {
 		BamAlignment alignment;			// BamAlignmentRecord record;		
 
     	// Program options 
-    	std::string strandedness;		// strandedness of library
     	std::string library_type;		// library type
     	bool nonunique_alignments;		// consider secondary alignments 
     	int mapq;						// minimum mapping quality
@@ -36,10 +35,9 @@ class AlignmentFile {
     		// Set Attributes
     		file_name = args -> alignment_file;
     		index_file = args -> index_file;
-    		strandedness = args -> strandedness;
     		library_type = args -> library_type;
     		nonunique_alignments = args -> nonunique_alignments;
-    		mapq = args -> mapq_min;
+    		mapq = args -> mapq_min - 1;
 
     	}
 
@@ -143,9 +141,8 @@ class AlignmentFile {
 
 
 		// Grab Alignments within Interval Using Bam Index
-		int findAlignments(MappingCounts &mappedCounts, std::string ref, int beginPos, int endPos, char strand) {
-
-		    // 1-based to 0-based.
+		int findAlignments(MappingCounts &mappedCounts, std::string ref, int beginPos, int endPos, char strand,
+						   bool peak_detection, int prev_stop, char prev_strand, int next_start, char next_strand) {
 
 		    int rID = contig_cache[ref];
 
@@ -157,41 +154,67 @@ class AlignmentFile {
 		    int num_alignments = 0;
 		    int align_end;
 
-		    if (strandedness == "reverse" && strand == '-') {
-		    	strand = '+';
-		    } else if (strandedness == "reverse" && strand == '+') {
-		    	strand = '-';
-		    }
 
 			while (inFile.GetNextAlignment(alignment)) {
 
-
-		        // Break if not mapped, past reference id, or end of file.
-		        if (alignment.RefID > rID || alignment.Position >= endPos) {
+				// Check if position in alignment file is beyond desired range
+				if (alignment.RefID != rID || alignment.Position > endPos) {
 		            break;
 		        }
 
-		        // Check Strandedness
-		        if (strandedness != "unstranded") {
-			        if ((alignment.IsReverseStrand() && strand != '-') || (!alignment.IsReverseStrand() && strand == '-')) {
-			        	continue;
-			        }
-		    	}
-		     
-		        // Check if primary alignment
-		        if (!alignment.IsPrimaryAlignment() && (nonunique_alignments == false)) {
-		        	continue;
-		        }
+		        // Check if alignment is on the same strand
+		        if ((alignment.IsReverseStrand() && strand != '-') || (!alignment.IsReverseStrand() && strand == '-')) {
+					continue;
+				} 
+
+				// Check if primary alignment
+				if (!alignment.IsPrimaryAlignment() && (nonunique_alignments == false)) {
+					continue;
+				}
 
 		        // Check if sufficient quality
-		        if (alignment.MapQuality && mapq != -1) {
-		        	continue;
-		        }
+				if (alignment.MapQuality <= mapq) {
+		       		continue;
+				}
 
-		        
-		        // if (peak_detection) {
-		        // 	mappedCounts.addRead(alignment.Position, alignment.GetEndPosition());
-		        // }
+				if (strand == '+') {
+
+					// Check if alignment doens't start within transcript
+					if (alignment.Position < beginPos) {
+						continue;
+					}
+
+
+				} else {
+
+					// Check if alignment doens't start within transcript
+					if (alignment.GetEndPosition() > endPos) {
+						continue;
+					}
+
+				}
+
+				if (next_start != -1 && strand == next_strand) {
+
+					if (alignment.GetEndPosition() >= next_start) {
+						continue;
+
+					} 
+
+				}
+
+	        	if (prev_stop != -1 && strand == prev_strand) {
+
+	        		if (alignment.Position <= prev_stop) {
+						continue;
+
+					} 
+
+	        	}
+
+		        if (peak_detection) {
+		        	mappedCounts.addRead(alignment.Position, alignment.GetEndPosition());
+		        }
 
 		        num_alignments++;
 	

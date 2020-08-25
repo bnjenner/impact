@@ -22,8 +22,10 @@ class Feature {
 	    	type = split[3];
 	    	contig = split[0];
 	    	strand = split[6][0];
-	    	start = std::stoi(split[3]);
-	    	stop = std::stoi(split[4]);
+
+	    	// 1 to 0 based indexing
+	    	start = std::stoi(split[3]) - 1;
+	    	stop = std::stoi(split[4]) - 1;
 
 	    	split.clear();
 
@@ -84,9 +86,8 @@ class  AnnotationFile {
 
 				while ( getline(gff_file, line) ) {
 
-					if (line.substr(0,2) != "##") {
+					if (line[0] != '#') {
 
-						//Feature feature_obj(&line, &file_suffix);
 						feature_cache.emplace_back(&line, &file_suffix);
 						total_features++;
 
@@ -96,8 +97,7 @@ class  AnnotationFile {
 				gff_file.close();
 			}
 
-			feature_cache[0].print();
-			feature_cache[total_features - 1].print();
+
 		}
 
 };
