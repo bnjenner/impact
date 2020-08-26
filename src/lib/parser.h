@@ -16,7 +16,6 @@ struct ImpactArguments {
     bool peak_detection; 				// enable peak detection 
     int max_components;					// max components for GMM
 
-    CharString index_suffix = ".bai";	// Suffix for index file
 };
 
 
@@ -109,11 +108,6 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
 	    }
 	}    
     
-    // Add Index Suffix
-    for (int i = 0; i < length(args.index_suffix); i++) {
-		appendValue(args.index_file, args.index_suffix[i]);
-	}
-
 
 	// Options
     getOptionValue(args.library_type, parser, "library-type");

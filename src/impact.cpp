@@ -9,9 +9,8 @@
 #include "lib/parser.h"
 #include "lib/utils.h"
 #include "lib/peaks.h"
-#include "lib/alignments.h"
 #include "lib/annotations.h"
-#include "lib/count.h"
+#include "lib/alignments.h"
 
 // Threads
 void open_alignment(AlignmentFile *alignment) {
@@ -43,18 +42,21 @@ int main(int argc, char const ** argv) {
     std::cerr << "[Parsing Input Files...]\n";
 
     // Construct alignment object in thread
-    // AlignmentFile alignment(&args);
-    // std::thread align_thread(open_alignment, &alignment);
+    AlignmentFile alignment(&args);
+    std::thread align_thread(open_alignment, &alignment);
 
     // Construct annotation object in thread
     AnnotationFile annotation(&args);
     std::thread annotate_thread(open_annotation, &annotation);
 
     // join threads
-    // align_thread.join();
+    align_thread.join();
     annotate_thread.join();
 
+    //std::cerr << annotation.get_feature("Contig0-", 500, 600) << "\n";
 
+    std::cerr << "[Counting Reads...]\n";
+    alignment.get_counts(&annotation);
     // Poor attempt at asynchronous counting :(
     // Count Reads
     // std::cerr << "[Counting Reads...]\n";
@@ -77,8 +79,8 @@ int main(int argc, char const ** argv) {
    	// getCounts(&annotation, &alignment, 0, annotation.total_features, args.peak_detection);
    	
 
-    // // Close alignment file
-    // alignment.close();
+    // Close alignment file
+    alignment.close();
    	
    	auto stop = std::chrono::high_resolution_clock::now(); 
    	auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start); 
