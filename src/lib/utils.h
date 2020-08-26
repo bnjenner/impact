@@ -1,32 +1,3 @@
-// Run of the mill split function
-std::vector<std::string> split_gff(const std::string *line, char d) {
-
-
-	std::vector<std::string> cols;
-	std::string col = "";
-
-	for (char c: *line) {
-
-		if (c == d) { 
-
-	    	cols.push_back(col); 
-	    	col = ""; 
-
-		} else { 
-
-	    	col = col + c;
-
-		} 
-	}  
-
-	if (col != "") {
-		cols.push_back(col); 
-	}
-
-	return cols;
-
-}
-
 
 // Parse GFF annotation for ID 
 std::string get_id(const std::string *line, const std::string *file_suffix) {

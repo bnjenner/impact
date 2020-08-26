@@ -13,6 +13,7 @@
 #include "lib/annotations.h"
 #include "lib/count.h"
 
+// Threads
 void open_alignment(AlignmentFile *alignment) {
     alignment -> open();
 }
@@ -42,25 +43,42 @@ int main(int argc, char const ** argv) {
     std::cerr << "[Parsing Input Files...]\n";
 
     // Construct alignment object in thread
-    AlignmentFile alignment(&args);
-    std::thread align_thread(open_alignment, &alignment);
+    // AlignmentFile alignment(&args);
+    // std::thread align_thread(open_alignment, &alignment);
 
     // Construct annotation object in thread
     AnnotationFile annotation(&args);
     std::thread annotate_thread(open_annotation, &annotation);
 
     // join threads
-    align_thread.join();
+    // align_thread.join();
     annotate_thread.join();
 
 
+    // Poor attempt at asynchronous counting :(
     // Count Reads
-    std::cerr << "[Counting Reads...]\n";
-   	int total_counts = getCounts(&annotation, &alignment, args.peak_detection);
+    // std::cerr << "[Counting Reads...]\n";
+    
+    // futures vector and iterator
+    // std::vector<std::future<void>> count_futures;
+    // int i = 0;
+    // while (i < annotation.indicies.size() - 1) {
+
+    //     count_futures.push_back(std::async(std::launch::async, getCounts, &annotation, &alignment, 
+    //                                        (annotation.indicies[i] + 1), annotation.indicies[i+1],
+    //                                        args.peak_detection));
+
+
+    //     i++;
+    //}
+
+    // Count Reads
+    // std::cerr << "[Counting Reads...]\n";
+   	// getCounts(&annotation, &alignment, 0, annotation.total_features, args.peak_detection);
    	
 
-    // Close alignment file
-    alignment.close();
+    // // Close alignment file
+    // alignment.close();
    	
    	auto stop = std::chrono::high_resolution_clock::now(); 
    	auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start); 
