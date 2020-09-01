@@ -117,7 +117,7 @@ class ContigBin {
 				x = floor((i + j) / 2);
 
 				// std::cerr << feature_cache[x].name << "\t" << i << "\t" << j
-				// 		  << "\t" << x << "\n"; 
+				//  		  << "\t" << x << "\n"; 
 				
 				// If interval is between features or 
 				//	overlaping with front of feature (5' end) or
@@ -145,16 +145,20 @@ class ContigBin {
 				}
 
 			}
-
+			
 			// Check for Next Overlap
-			if (feature_cache[x+1].start < stop && feature_cache[x].name != feature_cache[x+1].name) {
+			if ((feature_cache[x+1].start <= stop && feature_cache[x].name != feature_cache[x+1].name) && 
+				(x != num_features - 1)) {
+				
 				return 2;
 			} 
 
 			// Check for Previous Overlap
-			if (feature_cache[x-1].stop > start && feature_cache[x].name != feature_cache[x-1].name) {
+			if ((feature_cache[x-1].stop >= start && feature_cache[x].name != feature_cache[x-1].name) && 
+			    (x != 0)) {
+
 				return 2;
-			} 
+			}
 
 			feature_cache[x].count++;
 			return 0;
@@ -174,7 +178,7 @@ class  AnnotationFile {
 		std::string file_name;					// Name of annotation file
 		std::string file_suffix;				// Type of annotation file
 		int total_features = 0;					// Number of features (lines)			
-    	ContigBin contig_bin[10000];			// Bin for contigs
+    	ContigBin contig_bin[100000];			// Bin for contigs
     	std::vector<int> order;
 
 
@@ -200,7 +204,7 @@ class  AnnotationFile {
 
 
 			// Check if hash is too large
-			if (hash >= 9999) {
+			if (hash >= 99999) {
 				return key_exists(hash, hash_string, -hash);
 			}	
 
@@ -215,7 +219,7 @@ class  AnnotationFile {
 			
 			}
 
-			return 10000;
+			return 100000;
 		}
 
 
@@ -226,7 +230,7 @@ class  AnnotationFile {
 		 	  // 1 = No Feature
 		 	  // 2 = Ambiguous
 
-			int hash = std::hash<std::string>{}(hash_string) % 10000;
+			int hash = std::hash<std::string>{}(hash_string) % 100000;
 			int gate = key_exists(hash, hash_string, 0);
 
 			if (gate == 0) {
@@ -234,9 +238,14 @@ class  AnnotationFile {
 			} 
 
 			while (contig_bin[hash].hash_string != hash_string) {
+
+				if (contig_bin[hash].hash_string.empty()) {
+					return 1;
+				}
+
 				hash++;
 
-				if (hash >= 9999) {
+				if (hash >= 99999) {
 					hash = 0;
 				}
 			
@@ -250,7 +259,7 @@ class  AnnotationFile {
 
 			// open annotation file 
 			std::string line;
-			std::ifstream gff_file (file_name);
+			std::ifstream gff_file(file_name);
 
 			// Gate Serves as hash offset in case of collisions
 			int gate; 
@@ -284,7 +293,7 @@ class  AnnotationFile {
 							contig_bin[final_hash] = ContigBin(feat_obj.contig + feat_obj.strand);
 
 						  // If Key has offset 
-						} else if (gate != 0 && gate != 10000) {
+						} else if (gate != 0 && gate != 100000) {
 							final_hash = feat_obj.hash + gate;
 							contig_bin[final_hash] = ContigBin(feat_obj.contig + feat_obj.strand);
 						
@@ -296,7 +305,7 @@ class  AnnotationFile {
 
 
 						// If object isnt first and key exists (gate == 10000)
-						if (bin_num_features != 0 && gate == 10000) {
+						if (bin_num_features != 0 && gate == 100000) {
 
 							if (contig_bin[final_hash].feature_cache[bin_num_features - 1].name == feat_obj.name) {
 								contig_bin[final_hash].feature_cache[bin_num_features - 1].update(feat_obj.stop);

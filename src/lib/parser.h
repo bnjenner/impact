@@ -11,6 +11,7 @@ struct ImpactArguments {
     std::string index_file;    			// index file
     std::string gff_file;      			// gff file
     std::string library_type;           // library type (SE or PE)
+    std::string strandedness;           // strandedness
     bool nonunique_alignments;			// count primary and secondary alignments
     int mapq_min;						// minimum mapq score
     bool peak_detection; 				// enable peak detection 
@@ -33,7 +34,7 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
 
     addArgument(parser, seqan::ArgParseArgument(
         ArgParseArgument::INPUT_FILE, "GFF"));
-
+    
 
       // Library Type
     addOption(parser, seqan::ArgParseOption(
@@ -41,6 +42,13 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
         ArgParseArgument::STRING, "STRING"));
     setDefaultValue(parser, "library-type", "paired");
     setValidValues(parser, "library-type", "single paired");
+
+      // Strandedness
+    addOption(parser, seqan::ArgParseOption(
+        "s", "strandedness", "Strandedness of library.",
+        ArgParseArgument::STRING, "STRING"));
+    setDefaultValue(parser, "strandedness", "forward");
+    setValidValues(parser, "strandedness", "forward reverse");
 
       // Nonunique Alignments
 	addOption(parser, seqan::ArgParseOption(
@@ -53,7 +61,7 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
 	    ArgParseArgument::INTEGER, "INT"));
 	setDefaultValue(parser, "mapq-min", "1");
 
-	  // Find 
+	  // Find peaks
 	addOption(parser, seqan::ArgParseOption(
         "p", "peak-detection", "Use peak detection to identify terminal exon variants."));
 
@@ -80,9 +88,6 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
     if (res != ArgumentParser::PARSE_OK) {
         return ArgumentParser::PARSE_ERROR;
     }
-
-
-    // Populate ImpactArguments 
 
     
     // Arguments (deduce file type)
@@ -111,6 +116,7 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
 
 	// Options
     getOptionValue(args.library_type, parser, "library-type");
+    getOptionValue(args.strandedness, parser, "strandedness");
 	args.nonunique_alignments = isSet(parser, "nonunique-alignments");
    	getOptionValue(args.mapq_min, parser, "mapq-min");
    	args.peak_detection = isSet(parser, "peak-detection");

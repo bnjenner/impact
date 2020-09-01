@@ -16,16 +16,18 @@ class AlignmentFile {
 
     	// Program options 
     	std::string library_type;		// library type
+    	std::string stranded;			// strandedness of library
     	bool nonunique_alignments;		// consider secondary alignments 
     	int mapq;						// minimum mapping quality
 
     	// Count Statistics
-    	int noncounts[4] = {0,0,0,0};
+    	int noncounts[5] = {0,0,0,0,0};
     		// Order:
     		  // 0 = Features
     		  // 1 = No Feature
     		  // 2 = Ambiguous
     		  // 3 = Low Qual
+    		  // 4 = Unmapped
    		
     	// Contig Cache
     	std::unordered_map<int, std::string> contig_cache; 	// Unordered map 
@@ -39,6 +41,7 @@ class AlignmentFile {
     		// Set Attributes
     		file_name = args -> alignment_file;
     		library_type = args -> library_type;
+    		stranded = args -> strandedness;
     		nonunique_alignments = args -> nonunique_alignments;
     		mapq = args -> mapq_min - 1;
 
@@ -115,10 +118,21 @@ class AlignmentFile {
 
 			while (inFile.GetNextAlignment(alignment)) {
 
-				//std::cerr << alignment.Name << "\t";
+
+				if (!alignment.IsMapped()) {
+					noncounts[4]++;
+					continue;
+				}
+
 
 				contig = contig_cache[alignment.RefID];
 				
+				if (library_type == "paired" && !alignment.IsProperPair()) {
+					noncounts[2]++;
+					continue;
+				}
+
+
 				if (alignment.IsReverseStrand()) {
 					strand = '-';
 				
@@ -127,9 +141,35 @@ class AlignmentFile {
 					
 				}
 
+				// Check if proper strand
+				if (stranded == "forward") {
+
+					if (library_type == "paired") {
+
+						if ((strand == '+' && !alignment.IsFirstMate()) || 
+							(strand == '-' && alignment.IsFirstMate())) {
+							noncounts[2]++;
+							continue;
+						}
+					
+					}
+
+				} else if (stranded == "reverse") {
+
+					if (library_type == "paired") {
+
+						if ((strand == '+' && alignment.IsFirstMate()) || 
+							(strand == '-' && !alignment.IsFirstMate())) {
+							noncounts[2]++;
+							continue;
+						}
+					
+					}
+
+				}
+
 				// Check if primary alignment
 				if (!alignment.IsPrimaryAlignment() && (nonunique_alignments == false)) {
-					//std::cerr << "secondary\n";
 					continue;
 				}
 
@@ -139,12 +179,7 @@ class AlignmentFile {
 		       		continue;
 				}
 
-				//if (alignment.Name == "A00351:130:HHGJFDSXX:3:1623:3703:36620_GTGTAG") {
-				result = annotation -> get_feature(contig + strand, alignment.Position, alignment.GetEndPosition());				
-				//}
-
-				//std::cerr << result << "\n";
-				
+				result = annotation -> get_feature(contig + strand, alignment.Position, alignment.GetEndPosition());						
 
 				noncounts[result]++; 
 			}

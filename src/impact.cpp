@@ -57,7 +57,15 @@ int main(int argc, char const ** argv) {
 
     std::cerr << "[Counting Reads...]\n";
     alignment.get_counts(&annotation);
-    // Poor attempt at asynchronous counting :(
+
+    std::cerr << "Features: " << alignment.noncounts[0] << "\n";
+    std::cerr << "No Features: " << alignment.noncounts[1] << "\n";
+    std::cerr << "Ambiguous: " << alignment.noncounts[2] << "\n";
+    std::cerr << "Low Quality: " << alignment.noncounts[3] << "\n";
+    std::cerr << "Unmapped: " << alignment.noncounts[4] << "\n";
+
+
+    // // Poor attempt at asynchronous counting :(
     // Count Reads
     // std::cerr << "[Counting Reads...]\n";
     
@@ -73,10 +81,6 @@ int main(int argc, char const ** argv) {
 
     //     i++;
     //}
-
-    // Count Reads
-    // std::cerr << "[Counting Reads...]\n";
-   	// getCounts(&annotation, &alignment, 0, annotation.total_features, args.peak_detection);
    	
 
     // Close alignment file
