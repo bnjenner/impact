@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION "3.18.0")
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Name of project and that it is C++ only.
 project (impact CXX)
@@ -8,6 +10,7 @@ project (impact CXX)
 find_package (ZLIB)
 find_package (SeqAn REQUIRED)
 find_package(Armadillo REQUIRED)
+find_package (Threads)
 
 include_directories("${PROJECT_SOURCE_DIR}/src")
 include_directories("${PROJECT_SOURCE_DIR}/lib/")
