@@ -1,98 +1,98 @@
-#include <armadillo>
+// #include <armadillo>
 
-using namespace arma;
+// using namespace arma;
 
-// Mapping Class
-class MappingCounts {
+// // Mapping Class
+// class MappingCounts {
 
-	public:
+// 	public:
 
-	// Attributes
-		std::string feature_name;
-		int start;
-		int stop;
-		int length;
+// 	// Attributes
+// 		std::string feature_name;
+// 		int start;
+// 		int stop;
+// 		int length;
 
-		mat counts;
-        int num_counts = 0;
+// 		mat counts;
+//         int num_counts = 0;
 
-    // Inialize
-    	MappingCounts(std::string feat_name, int interval_start, int interval_stop) {
+//     // Inialize
+//     	MappingCounts(std::string feat_name, int interval_start, int interval_stop) {
 
-    		// Set Attributes
-    		feature_name = feat_name;
-    		start = interval_start;
-    		stop = interval_stop;
-    		length = stop - start + 1;
+//     		// Set Attributes
+//     		feature_name = feat_name;
+//     		start = interval_start;
+//     		stop = interval_stop;
+//     		length = stop - start + 1;
 
-    		counts.set_size(1, length);
-    		counts.zeros();
+//     		counts.set_size(1, length);
+//     		counts.zeros();
 
-		} 
+// 		} 
 
-    // Methods
-    	void addRead(int read_start, int read_stop) {
+//     // Methods
+//     	void addRead(int read_start, int read_stop) {
 
-    		int begin;
-    		int end;
+//     		int begin;
+//     		int end;
 
-    		if (read_start < start) {
-    			begin = 0;
-    			read_start = start;
-    		} else {
-    			begin = read_start - start;
-    		}
+//     		if (read_start < start) {
+//     			begin = 0;
+//     			read_start = start;
+//     		} else {
+//     			begin = read_start - start;
+//     		}
 
-    		if (read_stop > stop) {
-    			end = 0;
-    			read_stop = stop;
-    		} else {
-    			end = stop - read_stop;
-    		}
+//     		if (read_stop > stop) {
+//     			end = 0;
+//     			read_stop = stop;
+//     		} else {
+//     			end = stop - read_stop;
+//     		}
 
 
-    		mat unmapped_pre(1, begin, fill::zeros);
-			mat mapped(1, (read_stop - read_start + 1), fill::ones);
-			mat unmapped_post(1, end, fill::zeros);
+//     		mat unmapped_pre(1, begin, fill::zeros);
+// 			mat mapped(1, (read_stop - read_start + 1), fill::ones);
+// 			mat unmapped_post(1, end, fill::zeros);
 
-			mat read = join_rows(join_rows(unmapped_pre, mapped), unmapped_post);
+// 			mat read = join_rows(join_rows(unmapped_pre, mapped), unmapped_post);
 
-    		counts = counts + read;
-            num_counts ++;
+//     		counts = counts + read;
+//             num_counts ++;
 
-    	}
+//     	}
 
-    	void print() {
+//     	void print() {
 
-    		std::cout << counts << std::endl;
+//     		std::cout << counts << std::endl;
 
-    	}
+//     	}
 
-    	void write() {
+//     	void write() {
 
-    		std::ofstream out_file;
-			out_file.open(feature_name + ".txt");
+//     		std::ofstream out_file;
+// 			out_file.open(feature_name + ".txt");
 
-			for (int i = 0; i <= counts.n_cols; i++) {
+// 			for (int i = 0; i <= counts.n_cols; i++) {
 
-                int temp = round(counts.at(0,i));
-				out_file << temp << std::endl;
-			}
+//                 int temp = round(counts.at(0,i));
+// 				out_file << temp << std::endl;
+// 			}
 
-			out_file.close();	
+// 			out_file.close();	
 
-    	}
+//     	}
 
-    	void fit(int max_components) {
+//     	void fit(int max_components) {
 
-    		bool status;
-    		double likelihood;
-    		double max_bic;
-    		double bic;
-    		int best_k = 0;
-    		int p;
-    		mat mean;
-            mat cov;
+//     		bool status;
+//     		double likelihood;
+//     		double max_bic;
+//     		double bic;
+//     		int best_k = 0;
+//     		int p;
+//     		mat mean;
+//             mat cov;
 
         //     mat data;
         //     mat temp;
@@ -200,6 +200,6 @@ class MappingCounts {
 
         		// }
             // }
-    	}
+//     	}
 
-};
+// };

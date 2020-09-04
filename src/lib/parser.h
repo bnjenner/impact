@@ -28,14 +28,14 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
     ArgumentParser parser("impact");
     addDescription(parser, "Generates read counts and identifies peaks in mapped reads from TAGseq experiments.");
 
-	// Define Options
+	// Define Arguments
     addArgument(parser, seqan::ArgParseArgument(
         ArgParseArgument::INPUT_FILE, "BAM"));
 
     addArgument(parser, seqan::ArgParseArgument(
         ArgParseArgument::INPUT_FILE, "GFF"));
     
-
+    // Define Options
       // Library Type
     addOption(parser, seqan::ArgParseOption(
         "l", "library-type", "Library type.",
@@ -72,6 +72,7 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
 	    ArgParseArgument::INTEGER, "INT"));
 	setDefaultValue(parser, "max-components", "4");
 
+
 	// Add Information 
 	addUsageLine(parser, "input.bam input.gff [options]");
     setDefaultValue(parser, "version-check", "OFF");
@@ -101,7 +102,7 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
 
 	    	getArgumentValue(args.alignment_file, parser, i);
 	    	getArgumentValue(args.index_file, parser, i);
-            args.index_file = args.index_file + ".bai"	
+            args.index_file = args.index_file + ".bai";
 
 	    } else if (file_exts[i] == "gff" || file_exts[i] == "gtf") {
 

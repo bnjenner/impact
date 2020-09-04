@@ -1,6 +1,8 @@
 #include "api/BamReader.h"
+#include <armadillo> 
 
 using namespace BamTools;
+
 
 //////////////////////////////////////
 // Alignment Class
@@ -8,14 +10,13 @@ class AlignmentFile {
 
 	public:
 
-	// Attributes
-
-		std::string file_name;			// Bam File Name 
-		std::string index;			// Bam Index File 
+		// Attributes
 		BamReader inFile;				// Bam File Object
-		BamAlignment alignment;			// BamAlignmentRecord record;		
+		BamAlignment alignment;			// BamAlignmentRecord record;	
 
     	// Program options 
+    	std::string file_name;
+    	std::string index;
     	std::string library_type;		// library type
     	std::string stranded;			// strandedness of library
     	bool nonunique_alignments;		// consider secondary alignments 
@@ -41,7 +42,7 @@ class AlignmentFile {
 
     		// Set Attributes
     		file_name = args -> alignment_file;
-    		index = args -> index_file
+    		index = args -> index_file;
     		library_type = args -> library_type;
     		stranded = args -> strandedness;
     		nonunique_alignments = args -> nonunique_alignments;
@@ -56,7 +57,8 @@ class AlignmentFile {
 			if (!inFile.Open(file_name)) {
 			    std::cerr << "ERROR: Could not read alignment file: " << file_name << "\n";
 			    throw "ERROR: Could not read alignment file.";
-
+			}
+			
 			if (!inFile.OpenIndex(index)) {
 				std::cerr << "ERROR: Could not read index file: " << index << "\n";
 				throw "ERROR: Could not read index file";
@@ -86,8 +88,7 @@ class AlignmentFile {
 				contig_cache[i] = references.at(i).RefName;
 
 			}
-
-			//inFile.Rewind(); 	
+	
 
 		}
 
@@ -104,9 +105,12 @@ class AlignmentFile {
 		void head() {
 
 			int i = 0;
+
 		 	while (inFile.GetNextAlignment(alignment) && i < 10) { // (!atEnd(bamFileIn))
 
-		        std::cout << alignment.Name << "\n";
+		        std::cout << alignment.Name << "\t" << alignment.RefID << "\t"  << alignment.IsReverseStrand() << "\t"
+		        		  << alignment.Position << "\t" << alignment.GetEndPosition() << "\n";
+
 		        i++;
 
 		    }  
@@ -117,82 +121,97 @@ class AlignmentFile {
 		}
 
 
-		void get_counts(AnnotationFile *annotation) {
+	// Grab Alignments within Interval Using Bam Index
+		void get_clusters(int ref, int pos) {
 
-			std::string contig;
-			char strand;
+		    // 1-based to 0-based.
 
-			int result;
+ 			if (!inFile.Jump(ref, pos)) {
+		    	return;
+		    }
 
-			while (inFile.GetNextAlignment(alignment)) {
+		    int positions[1000] = {0}; 
+			int end_positions[1000] = {0};
+			char strands[1000];
+			arma::mat adj_matrix(1000, 1000); 
 
+			inFile.GetNextAlignment(alignment);
 
-				if (!alignment.IsMapped()) {
-					noncounts[4]++;
-					continue;
-				}
+			end_positions[0] = alignment.GetEndPosition();
+			positions[0] = round((end_positions[0] + alignment.Position) / 2);  
+			strands[0] = (alignment.IsReverseStrand()) ? '-' : '+';
 
+			int num_alignments = 1;
+			int i;
 
-				contig = contig_cache[alignment.RefID];
-				
-				if (library_type == "paired" && !alignment.IsProperPair()) {
-					noncounts[2]++;
-					continue;
-				}
+			while (num_alignments < 1000) {
 
+				inFile.GetNextAlignment(alignment);
 
-				if (alignment.IsReverseStrand()) {
-					strand = '-';
-				
-				} else {
-					strand = '+';
-					
-				}
+				i = num_alignments - 1;
+				end_positions[num_alignments] = alignment.GetEndPosition();
+				positions[num_alignments] = round((end_positions[num_alignments] + alignment.Position) / 2); 
+				strands[num_alignments] = (alignment.IsReverseStrand()) ? '-' : '+';
 
-				// Check if proper strand
-				if (stranded == "forward") {
+				while (i >= 0) {
 
-					if (library_type == "paired") {
+					//std::cerr << alignment.Position << "\t" << end_positions[i] << "\n";
+					if (alignment.Position > end_positions[i]) {
+						break;
 
-						if ((strand == '+' && !alignment.IsFirstMate()) || 
-							(strand == '-' && alignment.IsFirstMate())) {
-							noncounts[2]++;
-							continue;
-						}
-					
+					} else if (alignment.Position < end_positions[i] && strands[num_alignments] == strands[i]) {
+						adj_matrix(num_alignments, i) = 1;
+						adj_matrix(i, num_alignments) = 1;
+						i--; 
+
 					}
 
-				} else if (stranded == "reverse") {
-
-					if (library_type == "paired") {
-
-						if ((strand == '+' && alignment.IsFirstMate()) || 
-							(strand == '-' && !alignment.IsFirstMate())) {
-							noncounts[2]++;
-							continue;
-						}
-					
-					}
+					i--;
 
 				}
 
-				// Check if primary alignment
-				if (!alignment.IsPrimaryAlignment() && (nonunique_alignments == false)) {
-					continue;
-				}
+				num_alignments++;
 
-				// Check if sufficient quality
-				if (alignment.MapQuality <= mapq) {
-					noncounts[3]++;
-		       		continue;
-				}
-
-				result = annotation -> get_feature(contig + strand, alignment.Position, alignment.GetEndPosition());						
-
-				noncounts[result]++; 
 			}
+			
+			arma::rowvec degrees = arma::sum(adj_matrix);
+			int max = arma::index_max(degrees);
+			std::cerr << max << "\n";
+			std::cerr << positions[max] << "\n";
 
-		}
+
+
+		//         // Break if not mapped, past reference id, or end of file.
+		//         if (alignment.RefID > rID || alignment.Position >= endPos) {
+		//             break;
+		//         }
+
+		//         // Check Strandedness
+		//         if (strandedness != "unstranded") {
+		// 	        if ((alignment.IsReverseStrand() && strand != '-') || (!alignment.IsReverseStrand() && strand == '-')) {
+		// 	        	continue;
+		// 	        }
+		//     	}
+		     
+		//         // Check if primary alignment
+		//         if (!alignment.IsPrimaryAlignment() && (nonunique_alignments == false)) {
+		//         	continue;
+		//         }
+
+		//         // Check if sufficient quality
+		// 		if (alignment.MapQuality <= mapq) {
+		//        		continue;
+		// 		}
+		        
+		//         num_alignments++;
+	
+		//     }
+
+		//     // Return to beginnig 
+			inFile.Rewind();
+
+		   	//return num_alignments;
+		}			
 
 
 };
