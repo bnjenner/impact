@@ -178,7 +178,7 @@ class AlignmentFile {
 			int j;
 			int increment;
 
-			while(i < degrees.size()) {
+			while(i < 1000) {
 
 				increment = i + 1;
 
@@ -190,7 +190,7 @@ class AlignmentFile {
 
 					// Reverse search
 					j = i - 1;
-					while (true) {
+					while (j >= 0) {
 
 						if (strands[i] == strands[j]) {
 
@@ -215,7 +215,7 @@ class AlignmentFile {
 
 					// Forward search
 					j = i + 1;
-					while (true) {
+					while (j < 1000) {
 
 						if (strands[i] == strands[j]) {
 
@@ -240,7 +240,7 @@ class AlignmentFile {
 
 					increment = j;
 				
-					std::cerr << "Peak: " << positions[max] << "\t" <<  nodes << "\n";
+					std::cerr << contig_cache[ref] << "\t" << positions[max] << "\t" <<  nodes << "\n";
 					
 				}
 
