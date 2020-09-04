@@ -3,7 +3,6 @@
 
 using namespace BamTools;
 
-
 //////////////////////////////////////
 // Alignment Class
 class AlignmentFile {
@@ -137,47 +136,137 @@ class AlignmentFile {
 
 			inFile.GetNextAlignment(alignment);
 
-			end_positions[0] = alignment.GetEndPosition();
+			end_positions[0] = alignment.GetEndPosition() - 1;
 			positions[0] = round((end_positions[0] + alignment.Position) / 2);  
 			strands[0] = (alignment.IsReverseStrand()) ? '-' : '+';
 
 			int num_alignments = 1;
-			int i;
+			int n;
 
 			while (num_alignments < 1000) {
 
 				inFile.GetNextAlignment(alignment);
 
-				i = num_alignments - 1;
-				end_positions[num_alignments] = alignment.GetEndPosition();
+				n = num_alignments - 1;
+				end_positions[num_alignments] = alignment.GetEndPosition() - 1;
 				positions[num_alignments] = round((end_positions[num_alignments] + alignment.Position) / 2); 
 				strands[num_alignments] = (alignment.IsReverseStrand()) ? '-' : '+';
 
-				while (i >= 0) {
+				while (n >= 0) {
 
-					//std::cerr << alignment.Position << "\t" << end_positions[i] << "\n";
-					if (alignment.Position > end_positions[i]) {
+					if (alignment.Position > end_positions[n]) {
 						break;
 
-					} else if (alignment.Position < end_positions[i] && strands[num_alignments] == strands[i]) {
-						adj_matrix(num_alignments, i) = 1;
-						adj_matrix(i, num_alignments) = 1;
-						i--; 
+					} else if (alignment.Position <= end_positions[n] && strands[num_alignments] == strands[n]) {
+						adj_matrix(num_alignments, n) = 1;
+						adj_matrix(n, num_alignments) = 1;
 
-					}
+					} 
 
-					i--;
+					n--;
 
 				}
 
 				num_alignments++;
 
 			}
-			
+
 			arma::rowvec degrees = arma::sum(adj_matrix);
-			int max = arma::index_max(degrees);
-			std::cerr << max << "\n";
-			std::cerr << positions[max] << "\n";
+			int i = 0;
+			int j;
+			int increment;
+
+			while(i < degrees.size()) {
+
+				increment = i + 1;
+
+				std::cerr << i << "\n";
+
+				if (degrees[i] >= 2) {
+
+					int max = i;
+					int counts = degrees[i];
+					int nodes = 1;
+
+					// Reverse search
+					j = i - 1;
+					while (true) {
+
+						if (adj_matrix(i, j) == 0) {
+							break;
+						
+						} else {
+
+							nodes++;
+
+							if (degrees[j] > degrees[i]) {
+								max = j;
+
+							}
+
+						}
+
+						j--;
+
+					}
+
+					// Forward search
+					j = i + 1;
+					while (true) {
+
+						if (adj_matrix(i, j) == 0) {
+							break;
+						
+						} else {
+
+							nodes++;
+
+							if (degrees[j] > degrees[i]) {
+								max = j;
+
+							}
+
+						}
+
+						j++;
+
+					}
+
+					increment = j;
+				
+					std::cerr << "Peak: " << positions[max] << "\t" <<  nodes << "\n";
+					
+				}
+
+				i = increment;
+
+			}
+
+			// int max = arma::index_max(degrees);
+
+			// int sum = degrees[max];
+			// int counter = 1;
+
+			// arma::ivec indicies = arma::conv_to<arma::ivec>::from(find(adj_matrix.col(max)));
+			// arma::ivec temp;
+			// arma::ivec overlap;
+
+			// for (int i = 0; i < indicies.size(); i++) {
+
+			// 	temp = arma::conv_to<arma::ivec>::from(find(adj_matrix.col(indicies[i])));
+			// 	overlap = intersect(indicies, temp);
+
+			// 	if (indicies.size() == overlap.size() - 1) {
+			// 		break;
+			// 	}
+
+
+
+			// }
+
+
+			// std::cerr << max << "\n";
+			// std::cerr << positions[max] << "\n";
 
 
 
