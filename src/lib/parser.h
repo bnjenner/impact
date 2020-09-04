@@ -14,8 +14,7 @@ struct ImpactArguments {
     std::string strandedness;           // strandedness
     bool nonunique_alignments;			// count primary and secondary alignments
     int mapq_min;						// minimum mapq score
-    bool peak_detection; 				// enable peak detection 
-    int max_components;					// max components for GMM
+    int min_coverage;					// min coverage
 
 };
 
@@ -61,20 +60,16 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
 	    ArgParseArgument::INTEGER, "INT"));
 	setDefaultValue(parser, "mapq-min", "1");
 
-	  // Find peaks
-	addOption(parser, seqan::ArgParseOption(
-        "p", "peak-detection", "Use peak detection to identify terminal exon variants."));
-
-	  // Number of Components for GMM
+	  // Min coverage for peak 
 	addOption(parser, ArgParseOption(
-	    "m", "max-components",
-	    "Maximum number of components for Gaussian Mixture Model.",
+	    "m", "min-coverage",
+	    "Minimum coverage for target consideration.",
 	    ArgParseArgument::INTEGER, "INT"));
-	setDefaultValue(parser, "max-components", "4");
+	setDefaultValue(parser, "min-coverage", "3");
 
 
 	// Add Information 
-	addUsageLine(parser, "input.bam input.gff [options]");
+	addUsageLine(parser, "input.sorted.bam input.gff [options]");
     setDefaultValue(parser, "version-check", "OFF");
 	hideOption(parser, "version-check");
 	setVersion(parser, "dev0");
@@ -121,8 +116,7 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
     getOptionValue(args.strandedness, parser, "strandedness");
 	args.nonunique_alignments = isSet(parser, "nonunique-alignments");
    	getOptionValue(args.mapq_min, parser, "mapq-min");
-   	args.peak_detection = isSet(parser, "peak-detection");
-   	getOptionValue(args.max_components, parser, "max-components");
+    getOptionValue(args.min_coverage, parser, "min-coverage");
 
     return seqan::ArgumentParser::PARSE_OK;
 }

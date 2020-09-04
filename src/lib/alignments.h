@@ -20,6 +20,7 @@ class AlignmentFile {
     	std::string stranded;			// strandedness of library
     	bool nonunique_alignments;		// consider secondary alignments 
     	int mapq;						// minimum mapping quality
+    	int min_cov;					// min coverage for cluster detection
 
     	// Count Statistics
     	int noncounts[5] = {0,0,0,0,0};
@@ -46,6 +47,7 @@ class AlignmentFile {
     		stranded = args -> strandedness;
     		nonunique_alignments = args -> nonunique_alignments;
     		mapq = args -> mapq_min - 1;
+    		min_cov = args -> min_coverage - 1;
 
     	}
 
@@ -180,9 +182,7 @@ class AlignmentFile {
 
 				increment = i + 1;
 
-				std::cerr << i << "\n";
-
-				if (degrees[i] >= 2) {
+				if (degrees[i] >= min_cov) {
 
 					int max = i;
 					int counts = degrees[i];
@@ -192,18 +192,21 @@ class AlignmentFile {
 					j = i - 1;
 					while (true) {
 
-						if (adj_matrix(i, j) == 0) {
-							break;
+						if (strands[i] == strands[j]) {
+
+							if (adj_matrix(i, j) == 0) {
+								break;
 						
-						} else {
+							} else {
 
-							nodes++;
+								nodes++;
 
-							if (degrees[j] > degrees[i]) {
-								max = j;
+								if (degrees[j] > degrees[i]) {
+									max = j;
 
+								}
+							
 							}
-
 						}
 
 						j--;
@@ -214,18 +217,21 @@ class AlignmentFile {
 					j = i + 1;
 					while (true) {
 
-						if (adj_matrix(i, j) == 0) {
-							break;
+						if (strands[i] == strands[j]) {
+
+							if (adj_matrix(i, j) == 0) {
+								break;
 						
-						} else {
+							} else {
 
-							nodes++;
+								nodes++;
 
-							if (degrees[j] > degrees[i]) {
-								max = j;
+								if (degrees[j] > degrees[i]) {
+									max = j;
 
+								}
+							
 							}
-
 						}
 
 						j++;
