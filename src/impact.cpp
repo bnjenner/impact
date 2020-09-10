@@ -53,8 +53,9 @@ int main(int argc, char const ** argv) {
     align_thread.join();
     //annotate_thread.join();
 
-    alignment.get_clusters(0, 0);
     std::cerr << "[Counting Reads...]\n";
+    alignment.get_clusters(0, 1);
+    
     //alignment.get_counts(&annotation);
 
     // std::cerr << "Features: " << alignment.noncounts[0] << "\n";
