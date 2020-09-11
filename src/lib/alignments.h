@@ -1,5 +1,4 @@
 #include "api/BamReader.h"
-#include <armadillo> 
 
 using namespace BamTools;
 
@@ -9,7 +8,8 @@ class AlignmentFile {
 
 	public:
 
-		// Attributes
+	////////////////////////////
+	// Attributes
 		BamReader inFile;				// Bam File Object
 		BamAlignment alignment;			// BamAlignmentRecord record;	
 
@@ -23,20 +23,14 @@ class AlignmentFile {
     	int min_cov;					// min coverage for cluster detection
 
 
-    	// Count Statistics
-    	int noncounts[5] = {0,0,0,0,0};
-    		// Order:
-    		  // 0 = Features
-    		  // 1 = No Feature
-    		  // 2 = Ambiguous
-    		  // 3 = Low Qual
-    		  // 4 = Unmapped
    		
     	// Contig Cache
     	std::unordered_map<int, std::string> contig_cache; 	// Unordered map 
 
 
+    ////////////////////////////
     // Constructors
+
     	AlignmentFile() {}
 
     	AlignmentFile(const ImpactArguments *args) {
@@ -52,8 +46,11 @@ class AlignmentFile {
 
     	}
 
-
+    ////////////////////////////
     // Methods
+
+    	///////////////////////
+    	// Open files
     	void open() {
 
 			if (!inFile.Open(file_name)) {
@@ -95,14 +92,16 @@ class AlignmentFile {
 		}
 
 
-		// close file
+		///////////////////////
+		// Close files
 		void close() {
 
 			inFile.Close();
 
 		}
 
-		
+
+		///////////////////////
 	   	// head Bam
 		void head() {
 
@@ -124,107 +123,126 @@ class AlignmentFile {
 		}
 
 
+		///////////////////////
+		// Create Adjancecy Matrix and Populate Start / End / Char Arrays.
+		int get_adj_matrix(std::vector<int> &start_positions, std::vector<int> &end_positions, 
+						  std::vector<char> &strands, bool &contig_end, int ref, arma::mat &adj_matrix) {
+
+
+			// Initialize loop variables
+			int num_alignments = 0;
+			int n;
+			int temp_end;
+
+			while (num_alignments < 10000) {
+
+				inFile.GetNextAlignment(alignment);
+
+				// If next chromosome is reached, get out of town.
+				if (alignment.RefID > ref) {
+					contig_end = true;
+					break;
+				}
+
+				// Exclude secondary alignments
+				if (!alignment.IsPrimaryAlignment() && (nonunique_alignments == false)) {
+					continue;
+				}
+
+				// Check if sufficient mapping quality
+				if (alignment.MapQuality <= mapq) {
+		       		continue;
+				}
+
+
+				// Set values at appropriate position
+				temp_end = alignment.GetEndPosition() - 1;
+				end_positions[num_alignments] = (temp_end > end_positions[num_alignments - 1]) ? temp_end : end_positions[num_alignments -1]; 
+				start_positions[num_alignments] = alignment.Position;
+				strands[num_alignments] = (alignment.IsReverseStrand()) ? '-' : '+';
+
+
+				// find overlapping reads preceding this one in bam file
+				n = num_alignments - 1;
+
+				while (n >= 0) {
+
+					// if read is too far ahead to overlap, break
+					if (alignment.Position > end_positions[n]) {
+						break;
+
+					// if reads overlap
+					} else if (alignment.Position <= end_positions[n] && strands[num_alignments] == strands[n]) {
+						adj_matrix(num_alignments, n) = 1;
+						adj_matrix(n, num_alignments) = 1;
+
+					} 
+
+					n--;
+
+				}
+
+				num_alignments++;
+
+			}
+
+
+			return num_alignments;
+
+		}
+
+
+		///////////////////////
 		// Grab Alignments within Interval Using Bam Index
 		void get_counts(int ref, int pos) {
 
+			// Variable accounting for overflow when group is cut off by chunking reads
 		    int jump = pos;
 		    int count_overflow = 0;
 		    int max_overflow = 0;
 		    int peak_overflow = 0;
 		    int index_overflow = 0;
 		    
-		    // while reads are left on contig
+
+		    // while still reading reads on desired contig
 		    while (jump != 0) {
 
-		    	std::cerr << ref << "\t" << jump << "\n";
 
 		    	// Jump to desired region in bam
 		    	if (!inFile.Jump(ref, jump)) {
+		    		std::cerr << "[ERROR: Could not jump to region: " << ref << ":" << jump << ".]\n";
 		    		break;
 		    	}
 			    		
 
 		    	// Initialize data arrays of positions, end positions, and strands
-			    int start_positions[10000] = {0}; 
-				int end_positions[10000] = {0}; // is not actually list of end positions, just list of greatest end pos for lsit subsets
-				char strands[10000];
-
-				// round((end_positions[num_alignments] + alignment.Position) / 2); 	
+				std::vector<int> start_positions(10000, 0);
+				std::vector<int> end_positions(10000, 0);
+				std::vector<char> strands(10000, ' ');
 
 				// Initialize adjacency matrix
 				arma::mat adj_matrix(10000, 10000);
 				adj_matrix.zeros(); 
 
-
-				// Initialize loop variables
+				// Variable determining if end of contig was reached
 				bool contig_end = false;
-				int num_alignments = 0;
-				int n;
-				int temp_end;
-				while (num_alignments < 10000) {
 
-					inFile.GetNextAlignment(alignment);
+				// Create adjency matrix and get numver of aligned reads
+				int num_alignments = get_adj_matrix(start_positions, end_positions,
+													strands, contig_end, ref,
+													adj_matrix);
 
-					// If next chromosome is reached, get out of town.
-					if (alignment.RefID > ref) {
-						contig_end = true;
-						break;
-					}
-
-					// Exclude secondary alignments
-					if (!alignment.IsPrimaryAlignment() && (nonunique_alignments == false)) {
-						continue;
-					}
-
-					// Check if sufficient mapping quality
-					if (alignment.MapQuality <= mapq) {
-			       		continue;
-					}
-
-
-					// Set values at appropriate position
-					temp_end = alignment.GetEndPosition() - 1;
-					end_positions[num_alignments] = (temp_end > end_positions[num_alignments - 1]) ? temp_end : end_positions[num_alignments -1]; 
-					start_positions[num_alignments] = alignment.Position;
-					strands[num_alignments] = (alignment.IsReverseStrand()) ? '-' : '+';
-
-
-					// find overlapping reads preceding this one in bam file
-					n = num_alignments - 1;
-					while (n >= 0) {
-
-						// if read is too far ahead to overlap, break
-						if (alignment.Position > end_positions[n]) {
-							break;
-
-						// if reads overlap
-						} else if (alignment.Position <= end_positions[n] && strands[num_alignments] == strands[n]) {
-							adj_matrix(num_alignments, n) = 1;
-							adj_matrix(n, num_alignments) = 1;
-
-						} 
-
-						n--;
-
-					}
-
-					num_alignments++;
-
-				}
 				
 				// Calculate degree of read node
-				arma::rowvec degrees = arma::sum(adj_matrix);
-				
+				arma::rowvec degrees = arma::sum(adj_matrix, 0);
+
 
 				// Find approprite spot to break, we can't cut a group in half can we?
-				int total = num_alignments;
-				std::cerr << "Total: " << total << "\n";
-
 				if (num_alignments < 10000 || contig_end) {
 					jump = 0;
 
 				} else {
-					jump = end_positions[total - 1] + 1;
+					jump = end_positions[num_alignments - 1] + 1;
 				}
 
 				
@@ -237,7 +255,7 @@ class AlignmentFile {
 				int max;			// max # of nodes
 				int peak;			// location of peak
 
-				while(i < total) {
+				while(i < num_alignments) {
 
 					increment = i + 1;
 
@@ -338,15 +356,15 @@ class AlignmentFile {
 		   		}
 
 
+		   		// Check if the last node checked concluded a group.
 		   		if (degrees[total - 1] != 0) {
 
-		   			std::cerr << "Overflow: " << jump << "\n";
-
+		   			// Check preceding alignments to see if and where groups stops
 		   			while (true) {
 
 		   				inFile.GetNextAlignment(alignment);
-
 			   			char next_strand = (alignment.IsReverseStrand()) ? '-' : '+';
+
 
 			   			if (next_strand == strands[total - 1]) {
 
@@ -358,6 +376,7 @@ class AlignmentFile {
 								break;
 
 
+							// If read does not overlap, overflow variables are set to 0 and counts for last group are reported.
 							} else {													
 								std::cout << contig_cache[ref] << "\t" << peak << "\t" <<  nodes << "\n";
 								count_overflow = 0;
@@ -367,6 +386,7 @@ class AlignmentFile {
 
 							}
 
+						// if next read is wrong strand, keep searching
 						} else {
 							index_overflow ++;
 							continue;
@@ -375,8 +395,8 @@ class AlignmentFile {
 
 					}
 
+				// If degree of last node is zero, no need to report
 		   		} else {
-		   			std::cout << contig_cache[ref] << "\t" << peak << "\t" <<  nodes << "\n";
 		   			count_overflow = 0;
 		   			index_overflow = 0;
 		   			peak_overflow = 0;

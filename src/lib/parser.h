@@ -27,12 +27,14 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
     ArgumentParser parser("impact");
     addDescription(parser, "Generates read counts and identifies peaks in mapped reads from TAGseq experiments.");
 
+
 	// Define Arguments
     addArgument(parser, seqan::ArgParseArgument(
         ArgParseArgument::INPUT_FILE, "BAM"));
 
     addArgument(parser, seqan::ArgParseArgument(
         ArgParseArgument::INPUT_FILE, "GFF"));
+
     
     // Define Options
       // Library Type

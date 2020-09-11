@@ -6,9 +6,11 @@
 #include <future>
 #include <math.h>
 #include <fstream>
+#include <armadillo> 
 #include "lib/parser.h"
 #include "lib/utils.h"
 #include "lib/peaks.h"
+#include "lib/graph.h"
 //#include "lib/annotations.h"
 #include "lib/alignments.h"
 
@@ -55,15 +57,6 @@ int main(int argc, char const ** argv) {
 
     std::cerr << "[Counting Reads...]\n";
     alignment.get_counts(0, 1);
-    
-    //alignment.get_counts(&annotation);
-
-    // std::cerr << "Features: " << alignment.noncounts[0] << "\n";
-    // std::cerr << "No Features: " << alignment.noncounts[1] << "\n";
-    // std::cerr << "Ambiguous: " << alignment.noncounts[2] << "\n";
-    // std::cerr << "Low Quality: " << alignment.noncounts[3] << "\n";
-    // std::cerr << "Unmapped: " << alignment.noncounts[4] << "\n";
-
 
     // Close alignment file
     alignment.close();
