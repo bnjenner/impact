@@ -241,13 +241,8 @@ class AlignmentFile {
 
 					increment = i + 1;
 
-					std::cerr << "\n";
-					std::cerr << end_positions[i] << "\t";
-
 					// if nodes meet min connectedness requirement
 					if (degrees[i] >= min_cov) {
-
-						std::cerr << "yes\n";
 
 						// initialize group variables. Max and counts.
 						// max serves as "peak" to represent graph. It's arbitrary.
@@ -263,10 +258,6 @@ class AlignmentFile {
 							max = degrees[i];
 							peak = round((end_positions[i] + start_positions[i]) / 2); 
 
-						}
-
-						if (end_positions[i] == 2312495 || end_positions[i] == 2312207) {
-							std::cerr << nodes << "\n";
 						}
 
 
@@ -332,11 +323,6 @@ class AlignmentFile {
 
 						}
 
-						if (end_positions[i] == 2312495 || end_positions[i] == 2312207) {
-							std::cerr << nodes << "\n";
-						}
-
-
 						// increment increment :)
 						increment = j + 1;
 
@@ -356,9 +342,9 @@ class AlignmentFile {
 
 		   			std::cerr << "Overflow: " << jump << "\n";
 
-		   			inFile.GetNextAlignment(alignment);
-
 		   			while (true) {
+
+		   				inFile.GetNextAlignment(alignment);
 
 			   			char next_strand = (alignment.IsReverseStrand()) ? '-' : '+';
 
