@@ -9,17 +9,28 @@
 #include "lib/parser.h"
 #include "lib/utils.h"
 #include "lib/peaks.h"
+<<<<<<< HEAD
 #include "lib/annotations.h"
+=======
+//#include "lib/annotations.h"
+>>>>>>> dev
 #include "lib/alignments.h"
 
 // Threads
 void open_alignment(AlignmentFile *alignment) {
     alignment -> open();
+<<<<<<< HEAD
 }
 
 void open_annotation(AnnotationFile *annotation) {
     annotation -> open();
+=======
+>>>>>>> dev
 }
+
+// void open_annotation(AnnotationFile *annotation) {
+//     annotation -> open();
+// }
 
 
 // Main 
@@ -35,6 +46,7 @@ int main(int argc, char const ** argv) {
     if (res != seqan::ArgumentParser::PARSE_OK) {
             return res;
     }
+<<<<<<< HEAD
 
     
     std::cerr << "[IMPACT]\n";
@@ -82,6 +94,37 @@ int main(int argc, char const ** argv) {
     //     i++;
     //}
    	
+=======
+
+    
+    std::cerr << "[IMPACT]\n";
+
+    std::cerr << "[Parsing Input Files...]\n";
+
+    // Construct alignment object in thread
+    AlignmentFile alignment(&args);
+    std::thread align_thread(open_alignment, &alignment);
+
+    // Construct annotation object in thread
+    // AnnotationFile annotation(&args);
+    // std::thread annotate_thread(open_annotation, &annotation);
+
+    // join threads
+    align_thread.join();
+    //annotate_thread.join();
+
+    std::cerr << "[Counting Reads...]\n";
+    alignment.get_counts(0, 2312000);
+    
+    //alignment.get_counts(&annotation);
+
+    // std::cerr << "Features: " << alignment.noncounts[0] << "\n";
+    // std::cerr << "No Features: " << alignment.noncounts[1] << "\n";
+    // std::cerr << "Ambiguous: " << alignment.noncounts[2] << "\n";
+    // std::cerr << "Low Quality: " << alignment.noncounts[3] << "\n";
+    // std::cerr << "Unmapped: " << alignment.noncounts[4] << "\n";
+
+>>>>>>> dev
 
     // Close alignment file
     alignment.close();

@@ -14,8 +14,12 @@ struct ImpactArguments {
     std::string strandedness;           // strandedness
     bool nonunique_alignments;			// count primary and secondary alignments
     int mapq_min;						// minimum mapq score
+<<<<<<< HEAD
     bool peak_detection; 				// enable peak detection 
     int max_components;					// max components for GMM
+=======
+    int min_coverage;					// min coverage
+>>>>>>> dev
 
 };
 
@@ -28,14 +32,22 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
     ArgumentParser parser("impact");
     addDescription(parser, "Generates read counts and identifies peaks in mapped reads from TAGseq experiments.");
 
+<<<<<<< HEAD
 	// Define Options
+=======
+	// Define Arguments
+>>>>>>> dev
     addArgument(parser, seqan::ArgParseArgument(
         ArgParseArgument::INPUT_FILE, "BAM"));
 
     addArgument(parser, seqan::ArgParseArgument(
         ArgParseArgument::INPUT_FILE, "GFF"));
     
+<<<<<<< HEAD
 
+=======
+    // Define Options
+>>>>>>> dev
       // Library Type
     addOption(parser, seqan::ArgParseOption(
         "l", "library-type", "Library type.",
@@ -61,6 +73,7 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
 	    ArgParseArgument::INTEGER, "INT"));
 	setDefaultValue(parser, "mapq-min", "1");
 
+<<<<<<< HEAD
 	  // Find peaks
 	addOption(parser, seqan::ArgParseOption(
         "p", "peak-detection", "Use peak detection to identify terminal exon variants."));
@@ -74,6 +87,18 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
 
 	// Add Information 
 	addUsageLine(parser, "input.bam input.gff [options]");
+=======
+	  // Min coverage for peak 
+	addOption(parser, ArgParseOption(
+	    "m", "min-coverage",
+	    "Minimum coverage for target consideration.",
+	    ArgParseArgument::INTEGER, "INT"));
+	setDefaultValue(parser, "min-coverage", "3");
+
+
+	// Add Information 
+	addUsageLine(parser, "input.sorted.bam input.gff [options]");
+>>>>>>> dev
     setDefaultValue(parser, "version-check", "OFF");
 	hideOption(parser, "version-check");
 	setVersion(parser, "dev0");
@@ -100,7 +125,12 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
 	    if (file_exts[i] == "bam") {
 
 	    	getArgumentValue(args.alignment_file, parser, i);
+<<<<<<< HEAD
 	    	getArgumentValue(args.index_file, parser, i);	
+=======
+	    	getArgumentValue(args.index_file, parser, i);
+            args.index_file = args.index_file + ".bai";
+>>>>>>> dev
 
 	    } else if (file_exts[i] == "gff" || file_exts[i] == "gtf") {
 
@@ -119,8 +149,12 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
     getOptionValue(args.strandedness, parser, "strandedness");
 	args.nonunique_alignments = isSet(parser, "nonunique-alignments");
    	getOptionValue(args.mapq_min, parser, "mapq-min");
+<<<<<<< HEAD
    	args.peak_detection = isSet(parser, "peak-detection");
    	getOptionValue(args.max_components, parser, "max-components");
+=======
+    getOptionValue(args.min_coverage, parser, "min-coverage");
+>>>>>>> dev
 
     return seqan::ArgumentParser::PARSE_OK;
 }
