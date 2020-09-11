@@ -22,6 +22,7 @@ class AlignmentFile {
     	int mapq;						// minimum mapping quality
     	int min_cov;					// min coverage for cluster detection
 
+
     	// Count Statistics
     	int noncounts[5] = {0,0,0,0,0};
     		// Order:
@@ -119,13 +120,18 @@ class AlignmentFile {
 		   	// Jump to the first entry in file.
 		   	inFile.Rewind(); 	
 
+
 		}
 
 
-	// Grab Alignments within Interval Using Bam Index
-		void get_clusters(int ref, int pos) {
+		// Grab Alignments within Interval Using Bam Index
+		void get_counts(int ref, int pos) {
 
 		    int jump = pos;
+		    int count_overflow = 0;
+		    int max_overflow = 0;
+		    int peak_overflow = 0;
+		    int index_overflow = 0;
 		    
 		    // while reads are left on contig
 		    while (jump != 0) {
@@ -134,41 +140,47 @@ class AlignmentFile {
 		    	if (!inFile.Jump(ref, jump)) {
 		    		break;
 		    	}
-		    		
-		    	std::cerr << ref << "\t" << jump << "\n";
+			    		
 
 		    	// Initialize data arrays of positions, end positions, and strands
-			    int positions[10000] = {0}; 
-				int end_positions[10000] = {0};
-				char strands[10000];
+			    int positions[500] = {0}; 
+				int end_positions[500] = {0}; // is not actually list of end positions, just list of greatest end pos for lsit subsets
+				char strands[500];
 
 				// Initialize adjacency matrix
-				arma::mat adj_matrix(10000, 10000);
+				arma::mat adj_matrix(500, 500);
 				adj_matrix.zeros(); 
-
-				// Get First alignment
-				inFile.GetNextAlignment(alignment);
-
-				// Set values at first index
-				end_positions[0] = alignment.GetEndPosition() - 1;
-				positions[0] = round((end_positions[0] + alignment.Position) / 2);  
-				strands[0] = (alignment.IsReverseStrand()) ? '-' : '+';
 
 
 				// Initialize loop variables
-				int num_alignments = 1;
+				int num_alignments = 0;
 				int n;
-				while (num_alignments < 10000 && inFile.GetNextAlignment(alignment)) {
+				int temp_end;
+				while (num_alignments < 500) {
+
+					inFile.GetNextAlignment(alignment);
 
 					// If next chromosome is reached, get out of town.
 					if (alignment.RefID > ref) {
 						break;
 					}
 
+					// Exclude secondary alignments
+					if (!alignment.IsPrimaryAlignment() && (nonunique_alignments == false)) {
+						continue;
+					}
+
+					// Check if sufficient mapping quality
+					if (alignment.MapQuality <= mapq) {
+			       		continue;
+					}
+
 					// Set values at appropriate position
-					end_positions[num_alignments] = alignment.GetEndPosition() - 1;
-					positions[num_alignments] = round((end_positions[num_alignments] + alignment.Position) / 2); 
+					temp_end = alignment.GetEndPosition() - 1;
+					end_positions[num_alignments] = (temp_end > end_positions[num_alignments - 1]) ? temp_end : end_positions[num_alignments -1]; 
+					positions[num_alignments]  = round((end_positions[num_alignments] + alignment.Position) / 2); 	
 					strands[num_alignments] = (alignment.IsReverseStrand()) ? '-' : '+';
+
 
 					// find overlapping reads preceding this one in bam file
 					n = num_alignments - 1;
@@ -192,7 +204,6 @@ class AlignmentFile {
 					num_alignments++;
 
 				}
-
 				
 				// Calculate degree of read node
 				arma::rowvec degrees = arma::sum(adj_matrix);
@@ -201,37 +212,26 @@ class AlignmentFile {
 				// Find approprite spot to break, we can't cut a group in half can we?
 				int total = num_alignments;	
 
-				while (degrees[total - 1] != 0) {
+				if (num_alignments < 500) {
+					jump = 0;
 
-					total--;
-
-					// If entirety of loop is full..... we will come back to this
-					if (total < 1) {
-						total = num_alignments;
-						break;
-					}
-
-				}
-
-
-				// Position to jump to for next loop
-				if (total == num_alignments) {
-					jump = positions[total - 1];
 				} else {
-					jump = positions[total];
+					jump = end_positions[total - 1] + 1;
 				}
-
-				std::cerr << total << "\t" << jump << "\n";
 
 				
 				// Initialize variables for counting reads by nodes in their graphs
 				int i = 0;
 				int x;
 				int j;
-				int increment;
+				int increment;		// i offset
+				int nodes;			// # of counts
+				int max;			// max # of nodes
+				int peak;			// location of peak
 
 				while(i < total) {
 
+					std::cerr << i << "\n";
 					increment = i + 1;
 
 					// if nodes meet min connectedness requirement
@@ -239,8 +239,22 @@ class AlignmentFile {
 
 						// initialize group variables. Max and counts.
 						// max serves as "peak" to represent graph. It's arbitrary.
-						int max = i;
-						int nodes = 1;
+						if (i == index_overflow && count_overflow != 0) {
+
+							nodes = count_overflow;
+							max = max_overflow;
+							peak = peak_overflow;
+
+							if (nodes > degrees[i]) {
+								degrees[i] = nodes;
+							}
+
+							std::cerr << nodes << "\t" << max << "\t" << degrees[i] << "\n";
+
+						} else {
+							nodes = 1;
+							max = degrees[i];
+						}
 
 						// Search upstream of node
 						x = i;
@@ -257,8 +271,10 @@ class AlignmentFile {
 									nodes++;
 									x--;
 
-									if (degrees[j] > degrees[x]) {
-										max = j;
+
+									if (degrees[j] > max) {
+										max = degrees[j];
+										peak = positions[j];
 
 									}
 								
@@ -282,13 +298,19 @@ class AlignmentFile {
 							
 								} else {
 
-
 									nodes++;
-									x++;
 
-									if (degrees[j] > degrees[x]) {
-										max = j;
+									if (end_positions[j] > end_positions[x]) {
+										x++;
+									}
 
+									if (degrees[j] > max) {
+										max = degrees[j];
+										peak = positions[j];
+
+										if (max_overflow != 0) {
+											std::cerr << degrees[j] << "\t" << degrees[x] << "\t" << max << "\n";
+										}
 									}
 								
 								}
@@ -298,19 +320,65 @@ class AlignmentFile {
 
 						}
 
+
 						// increment increment :)
 						increment = j + 1;
 					
-						// report read conts
-						std::cout << contig_cache[ref] << "\t" << positions[max] << "\t" <<  nodes << "\n";
-						
+						// report read counts
+						if (increment < total) {
+							std::cout << contig_cache[ref] << "\t" << peak << "\t" <<  nodes << "\n";
+						}
 					}
 
 					i = increment;
 
-				}
 
-			}
+		   		}
+
+
+		   		if (degrees[total - 1] != 0) {
+
+		   			inFile.GetNextAlignment(alignment);
+
+		   			std::cerr << "overflow detected:\n";
+
+		   			while (true) {
+
+			   			char next_strand = (alignment.IsReverseStrand()) ? '-' : '+';
+
+			   			if (next_strand == strands[total - 1]) {
+
+				   			// check if overlap with next read; 
+				   			if (alignment.Position <= end_positions[total - 1]) {
+								count_overflow = nodes;
+								max_overflow = max;
+								peak_overflow = peak;
+								break;
+
+
+							} else {													
+								std::cout << contig_cache[ref] << "\t" << peak << "\t" <<  nodes << "\n";
+								count_overflow = 0;
+								index_overflow = 0;
+								break;
+
+							}
+
+						} else {
+							index_overflow ++;
+							continue;
+
+						}
+
+					}
+
+		   		} else {
+
+		   			index_overflow++;
+
+		   		}
+
+		   	}
 
 		}			
 

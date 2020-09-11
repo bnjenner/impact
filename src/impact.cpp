@@ -54,7 +54,7 @@ int main(int argc, char const ** argv) {
     //annotate_thread.join();
 
     std::cerr << "[Counting Reads...]\n";
-    alignment.get_clusters(0, 1);
+    alignment.get_counts(0, 2312000);
     
     //alignment.get_counts(&annotation);
 
