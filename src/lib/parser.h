@@ -18,6 +18,17 @@ struct ImpactArguments {
 
 };
 
+// parameters definition for alignment and graph classes
+struct Parameters {
+
+    std::string library_type;       // library type
+    std::string stranded;           // strandedness of library
+    bool nonunique_alignments;      // consider secondary alignments 
+    int mapq;                       // minimum mapping quality
+    int min_cov;                    // min coverage for cluster detection
+
+};
+
 
 /////////////////////////////////////// 
 // Argument Parser

@@ -6,7 +6,8 @@
 #include <future>
 #include <math.h>
 #include <fstream>
-#include <armadillo> 
+#include <armadillo>
+#include "api/BamReader.h" 
 #include "lib/parser.h"
 #include "lib/utils.h"
 #include "lib/peaks.h"
