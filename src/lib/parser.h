@@ -78,7 +78,7 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
 	    "m", "min-coverage",
 	    "Minimum coverage for target consideration.",
 	    ArgParseArgument::INTEGER, "INT"));
-	setDefaultValue(parser, "min-coverage", "3");
+	setDefaultValue(parser, "min-coverage", "5");
 
 
 	// Add Information 

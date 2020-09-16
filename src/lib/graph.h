@@ -1,5 +1,54 @@
 using namespace BamTools;
 
+class Overflow {
+
+	public: 
+
+	////////////////////////////
+	// Attributes
+		int count_overflow = 0;
+		int max_overflow = 0;
+		int peak_overflow = 0;
+		int index_overflow = 0;
+
+		int start = -1;
+		int stop = -1;
+
+	////////////////////////////
+	// Methods
+
+		///////////////////////
+		// back to zero
+		void reset() {
+
+			count_overflow = 0;
+			max_overflow = 0;
+			peak_overflow = 0;
+			index_overflow = 0;
+
+			start = -1;
+			stop = -1;
+
+		}
+
+		///////////////////////
+		// update attributes	
+		void update(int index, int count, int max, int peak, int begin, int end) {
+
+			index_overflow = index;
+			count_overflow = count;
+			max_overflow = max;
+			peak_overflow = peak;
+
+			start = begin;
+			stop = end;
+
+		}
+
+};
+
+
+
 //////////////////////////////////////
 // Graph Class
 class Graph {
@@ -10,9 +59,9 @@ class Graph {
 	// Attributes
 
 		// Arrays of read data
-		int start_positions[10000] = {0};
-		int end_positions[10000] = {0};
-		char strands[10000] = {' '};
+		int start_positions[5000] = {0};
+		int end_positions[5000] = {0};
+		char strands[5000] = {' '};
 
 
 		// Initialize adjacency matrix and degree vector
@@ -33,7 +82,7 @@ class Graph {
 		Graph(int ref_num, std::string ref_name) {
 
 			// Initialize matrix and contig number and name
-			adj_matrix = arma::mat(10000, 10000, arma::fill::zeros);
+			adj_matrix = arma::mat(5000, 5000, arma::fill::zeros);
 			ref = ref_num;
 			contig_name = ref_name;
 
@@ -54,7 +103,7 @@ class Graph {
 			num_alignments = 0;
 			contig_end = false;
 
-			while (num_alignments < 10000) {
+			while (num_alignments < 5000) {
 
 				inFile.GetNextAlignment(alignment);
 
@@ -74,9 +123,15 @@ class Graph {
 		       		continue;
 				}
 
-
-				// Set values at appropriate position
+				// get alignment end 
 				temp_end = alignment.GetEndPosition() - 1;
+
+				// If alignment spans double its actual length in bases, ignore it, its trash
+				if ((2 * alignment.Length) <= (temp_end - alignment.Position)) {
+					continue;
+				}
+
+				// read is ok, continue with populating vectors and matrix
 				end_positions[num_alignments] = (temp_end > end_positions[num_alignments - 1]) ? temp_end : end_positions[num_alignments -1]; 
 				start_positions[num_alignments] = alignment.Position;
 				strands[num_alignments] = (alignment.IsReverseStrand()) ? '-' : '+';
@@ -127,7 +182,7 @@ class Graph {
 			int jump;
 
 			// Find approprite spot to break, we can't cut a group in half can we?
-			if (num_alignments < 10000 || contig_end) {
+			if (num_alignments < 5000 || contig_end) {
 				jump = 0;
 
 			} else {
@@ -139,168 +194,190 @@ class Graph {
 
 
 		///////////////////////
+		// checks if last cluster is incomplete
+
+		int check_overflow(BamReader &inFile, BamAlignment &alignment) {
+
+			char next_strand;
+			int index_overflow = 0;
+			
+			// Check if the last node checked concluded a group.
+			if (degrees[num_alignments - 1] != 0) {
+
+				// Check following alignments to see if and where groups stops
+				while (true) {
+
+					inFile.GetNextAlignment(alignment);
+					next_strand = (alignment.IsReverseStrand()) ? '-' : '+';
+
+
+					if (next_strand == strands[num_alignments - 1]) {
+
+						// check if overlap with next read; 
+						if (alignment.Position <= end_positions[num_alignments - 1]) {
+							return index_overflow;
+
+
+						// If read does not overlap, overflow variables are set to 0 and counts for last group are reported.
+						} else {													
+							return -1;
+
+						}
+
+					// if next read is wrong strand, keep searching
+					} else {
+						index_overflow ++;
+						continue;
+
+					}
+
+				}
+
+			// If degree of last node is zero, no need to report
+			} else {
+				return -1;
+
+			}
+		}
+
+
+		///////////////////////
 		// gets clusters by counting connected nodes and checking for overflows (this one's a bit rough....)
 
-		void get_clusters(BamReader &inFile, BamAlignment &alignment, Parameters &parameters,
-						  int &index_overflow, int &count_overflow, int &max_overflow, int &peak_overflow) {
+		void get_clusters(BamReader &inFile, BamAlignment &alignment, Parameters &parameters, Overflow &overflow) {
 
-				// Initialize variables for counting reads by nodes in their graphs
-				int i = 0;
-				int x;
-				int j;
-				int increment;		// i offset
-				int nodes;			// # of counts
-				int max;			// max # of nodes
-				int peak;			// location of peak
+			// Initialize variables for counting reads by nodes in their graphs
+			int i = 0;
+			int x;
+			int j;
 
-				while(i < num_alignments) {
+			int increment;		// i offset
+			int nodes;			// # of counts
+			int max;			// max # of nodes
+			int peak;			// location of peak
+			char strand;		// group strand
+			int start;			// group start
+			int stop;			// group stop
 
-					increment = i + 1;
+			while(i < num_alignments) {
 
-					// if nodes meet min connectedness requirement
-					if (degrees[i] >= parameters.min_cov) {
+				increment = i + 1;
 
-						// initialize group variables. Max and counts.
-						// max serves as "peak" to represent graph. It's arbitrary.
-						if (i == index_overflow && count_overflow != 0) {
+				// if nodes meet min connectedness requirement
+				if (degrees[i] >= parameters.min_cov) {
 
-							nodes = count_overflow;
-							max = max_overflow;
-							peak = peak_overflow;
+					// initialize group variables. Max and counts.
+					// max serves as "peak" to represent graph. It's arbitrary.
+					if (i == overflow.index_overflow && overflow.count_overflow != 0) {
 
-						} else {
+						nodes = overflow.count_overflow;
+						max = overflow.max_overflow;
+						peak = overflow.peak_overflow;
+						start = overflow.start;
+						stop = overflow.stop;
 
-							nodes = 1;
-							max = degrees[i];
-							peak = round((end_positions[i] + start_positions[i]) / 2); 
+					} else {
 
+						nodes = 1;
+						max = degrees[i];
+						peak = round((end_positions[i] + start_positions[i]) / 2); 
+						start = start_positions[i];
+						stop = end_positions[i];
+					}
+
+					strand = strands[i];
+
+					// Search upstream of node
+					x = i;
+					j = i - 1;
+					while (j >= 0 && end_positions[j] > start_positions[x]) {
+
+						if (strands[x] == strands[j]) {
+
+							if (adj_matrix(x, j) == 0) {
+								break;
+						
+							} else {
+
+								nodes++;
+								x = j;
+								start = start_positions[j];
+
+
+								if (degrees[j] > max) {
+									max = degrees[j];
+									peak = round((end_positions[j] + start_positions[j]) / 2);
+
+								}
+							
+							}
 						}
 
+						j--;
 
-						// Search upstream of node
-						x = i;
-						j = i - 1;
-						while (j >= 0 && end_positions[j] > start_positions[x]) {
+					}
 
-							if (strands[x] == strands[j]) {
+					// Search downstream of node
+					x = i;
+					j = i + 1;
 
-								if (adj_matrix(x, j) == 0) {
-									break;
-							
-								} else {
+					while (j < num_alignments && end_positions[x] > start_positions[j]) {
 
-									nodes++;
+
+						if (strands[x] == strands[j]) {
+
+							if (adj_matrix(x, j) == 0) {
+								break;
+						
+							} else {
+
+								nodes++;
+
+								if (end_positions[j] > end_positions[x]) {
 									x = j;
-
-
-									if (degrees[j] > max) {
-										max = degrees[j];
-										peak = round((end_positions[j] + start_positions[j]) / 2);
-
-									}
-								
+									stop = end_positions[j];
 								}
-							}
 
-							j--;
+								if (degrees[j] > max) {
+									max = degrees[j];
+									peak = round((end_positions[j] + start_positions[j]) / 2);
 
-						}
-
-						// Search downstream of node
-						x = i;
-						j = i + 1;
-
-						while (j < num_alignments && end_positions[x] > start_positions[j]) {
-
-
-							if (strands[x] == strands[j]) {
-
-								if (adj_matrix(x, j) == 0) {
-									break;
+								}
 							
-								} else {
-
-									nodes++;
-
-									if (end_positions[j] > end_positions[x]) {
-										x = j;
-									}
-
-									if (degrees[j] > max) {
-										max = degrees[j];
-										peak = peak = round((end_positions[j] + start_positions[j]) / 2);
-
-									}
-								
-								}
 							}
-
-							j++;
-
 						}
 
-						// increment increment :)
-						increment = j + 1;
-
-						// report read counts
-						if (increment < num_alignments) {
-							std::cout << contig_name << "\t" << peak << "\t" <<  nodes << "\n";
-						}
-					}
-
-					i = increment;
-
-
-		   		}
-
-
-		   		// Check if the last node checked concluded a group.
-		   		if (degrees[num_alignments - 1] != 0) {
-
-		   			// Check preceding alignments to see if and where groups stops
-		   			while (true) {
-
-		   				inFile.GetNextAlignment(alignment);
-			   			char next_strand = (alignment.IsReverseStrand()) ? '-' : '+';
-
-
-			   			if (next_strand == strands[num_alignments - 1]) {
-
-				   			// check if overlap with next read; 
-				   			if (alignment.Position <= end_positions[num_alignments - 1]) {
-								count_overflow = nodes;
-								max_overflow = max;
-								peak_overflow = peak;
-								break;
-
-
-							// If read does not overlap, overflow variables are set to 0 and counts for last group are reported.
-							} else {													
-								std::cout << contig_name << "\t" << peak << "\t" <<  nodes << "\n";
-								count_overflow = 0;
-								index_overflow = 0;
-								peak_overflow = 0;
-								break;
-
-							}
-
-						// if next read is wrong strand, keep searching
-						} else {
-							index_overflow ++;
-							continue;
-
-						}
+						j++;
 
 					}
 
-				// If degree of last node is zero, no need to report
-		   		} else {
-		   			count_overflow = 0;
-		   			index_overflow = 0;
-		   			peak_overflow = 0;
+					// increment increment :)
+					increment = j + 1;
+
+					// report read counts
+					if (increment < num_alignments) {
+						std::cout << contig_name << "\t" << strand << "\t" << start << "\t"
+									<< stop << "\t" << peak << "\t" <<  nodes << "\n";
+					}
+				}
+
+				i = increment;
 
 
-		   		}
+			}
+			
+			int incomplete_offset = this -> check_overflow(inFile, alignment);
+
+			if (incomplete_offset != -1) {
+				overflow.update(incomplete_offset, nodes, max, peak, start, stop);
+			
+			} else {
+				std::cout << contig_name << "\t" << strand << "\t" << start << "\t"
+							<< stop << "\t" << peak << "\t" <<  nodes << "\n";
+				overflow.reset();
+			
+			}
+
 		}
 };
 

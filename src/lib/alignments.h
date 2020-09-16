@@ -100,15 +100,11 @@ class AlignmentFile {
 		///////////////////////
 		// Grab Alignments within Interval Using Bam Index
 		
-		void get_counts(int ref, int pos) {
+		void get_counts(int ref) {
 
 			// Variable accounting for overflow when group is cut off by chunking reads
-		    int jump = pos;
-		    int count_overflow = 0;
-		    int max_overflow = 0;
-		    int peak_overflow = 0;
-		    int index_overflow = 0;
-		    
+		    int jump = 1;
+			Overflow overflow; 
 
 		    // while still reading reads on desired contig
 		    while (jump != 0) {
@@ -118,8 +114,7 @@ class AlignmentFile {
 		    		std::cerr << "[ERROR: Could not jump to region: " << ref << ":" << jump << ".]\n";
 		    		break;
 		    	}
-			    		
-				
+			    			
 				// Create Graph object
 				Graph graph(ref, contig_cache[ref]);
 
@@ -132,7 +127,7 @@ class AlignmentFile {
 				// Calculate degree of read node
 				graph.get_degrees();
 
-				graph.get_clusters(inFile, alignment, parameters, index_overflow, count_overflow, max_overflow, peak_overflow);
+				graph.get_clusters(inFile, alignment, parameters, overflow);
 
 		   	} 
 
