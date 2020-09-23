@@ -1,5 +1,3 @@
-// #include <armadillo>
-
 // using namespace arma;
 
 // // Mapping Class

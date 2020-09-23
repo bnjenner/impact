@@ -354,10 +354,11 @@ class Graph {
 					// increment increment :)
 					increment = j + 1;
 
-					// report read counts
 					if (increment < num_alignments) {
+						// report read counts
 						std::cout << contig_name << "\t" << strand << "\t" << start << "\t"
-									<< stop << "\t" << peak << "\t" <<  nodes << "\n";
+								  << stop << "\t" << peak << "\t" <<  nodes << "\n";
+	
 					}
 				}
 
@@ -368,12 +369,16 @@ class Graph {
 			
 			int incomplete_offset = this -> check_overflow(inFile, alignment);
 
+			// Check if last cluster is complete
 			if (incomplete_offset != -1) {
 				overflow.update(incomplete_offset, nodes, max, peak, start, stop);
 			
 			} else {
+				// report read coutns
 				std::cout << contig_name << "\t" << strand << "\t" << start << "\t"
-							<< stop << "\t" << peak << "\t" <<  nodes << "\n";
+						  << stop << "\t" << peak << "\t" <<  nodes << "\n";
+
+				// reset overflow object
 				overflow.reset();
 			
 			}
