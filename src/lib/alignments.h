@@ -17,6 +17,7 @@ class AlignmentFile {
 	    	std::string index;
 	    	Parameters parameters; 		// parameters struct (found in parser.h)
 
+			RefVector references;
 	    	std::unordered_map<int, std::string> contig_cache;  // Unordered map 
    		
 
@@ -31,8 +32,8 @@ class AlignmentFile {
     		// Set Attributes
     		file_name = args -> alignment_file;
     		index = args -> index_file;
-    		parameters.library_type = args -> library_type;
-    		parameters.stranded = args -> strandedness;
+    		parameters.library_type = ((args -> library_type) == "paired") ? 'p' : 's';
+    		parameters.stranded = ((args -> strandedness) == "forward") ? 'f' : 'r'; 
     		parameters.nonunique_alignments = args -> nonunique_alignments;
     		parameters.mapq = args -> mapq_min - 1;
     		parameters.min_cov = args -> min_coverage - 1;
@@ -75,7 +76,7 @@ class AlignmentFile {
 			}
 
 			// Generate Ref Map (contig indicies)
-			RefVector references = inFile.GetReferenceData();
+			references = inFile.GetReferenceData();
 			for (int i = 0; i < references.size(); i++) {
 
 				contig_cache[i] = references.at(i).RefName;
@@ -96,15 +97,18 @@ class AlignmentFile {
 		}
 
 
-
 		///////////////////////
 		// Grab Alignments within Interval Using Bam Index
 		
 		void get_counts(int ref) {
 
-			// Variable accounting for overflow when group is cut off by chunking reads
+			// Variable accounting for group cut off and name of first read in group 
 		    int jump = 1;
-			Overflow overflow; 
+			int dead_end[2] = {-1}; 		// 0 is '+'; 1 is '-'
+			std::string next_id = "NA";
+
+			// Create Graph object
+			Graph graph(ref, contig_cache[ref]);
 
 		    // while still reading reads on desired contig
 		    while (jump != 0) {
@@ -114,21 +118,18 @@ class AlignmentFile {
 		    		std::cerr << "[ERROR: Could not jump to region: " << ref << ":" << jump << ".]\n";
 		    		break;
 		    	}
-			    			
-				// Create Graph object
-				Graph graph(ref, contig_cache[ref]);
 
 				// Create adjency matrix and get numver of aligned reads
-				graph.create_adjacency(inFile, alignment, parameters);
+				graph.create_adjacency(inFile, alignment, parameters, next_id, dead_end);
 
 				// get jump for next itereation
 				jump = graph.get_jump();
 
-				// Calculate degree of read node
-				graph.get_degrees();
+				// report counts for read cluster
+				graph.get_counts(parameters.stranded);
 
-				graph.get_clusters(inFile, alignment, parameters, overflow);
-
+				graph.reset();
+				
 		   	} 
 
 		}			

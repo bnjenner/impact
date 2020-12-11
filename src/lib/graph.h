@@ -1,54 +1,5 @@
 using namespace BamTools;
 
-class Overflow {
-
-	public: 
-
-	////////////////////////////
-	// Attributes
-		int count_overflow = 0;
-		int max_overflow = 0;
-		int peak_overflow = 0;
-		int index_overflow = 0;
-
-		int start = -1;
-		int stop = -1;
-
-	////////////////////////////
-	// Methods
-
-		///////////////////////
-		// back to zero
-		void reset() {
-
-			count_overflow = 0;
-			max_overflow = 0;
-			peak_overflow = 0;
-			index_overflow = 0;
-
-			start = -1;
-			stop = -1;
-
-		}
-
-		///////////////////////
-		// update attributes	
-		void update(int index, int count, int max, int peak, int begin, int end) {
-
-			index_overflow = index;
-			count_overflow = count;
-			max_overflow = max;
-			peak_overflow = peak;
-
-			start = begin;
-			stop = end;
-
-		}
-
-};
-
-
-
 //////////////////////////////////////
 // Graph Class
 class Graph {
@@ -58,20 +9,18 @@ class Graph {
 	////////////////////////////
 	// Attributes
 
-		// Arrays of read data
-		int start_positions[5000] = {0};
-		int end_positions[5000] = {0};
-		char strands[5000] = {' '};
+		// Cluster variables
+		int start = -1;
+		int end = -1;
+		int strand = -1;
+		int nodes = 1;
+		int junct_start = -1; // Will be implemented later to account for splicing
+		int junct_stop = -1;
 
-
-		// Initialize adjacency matrix and degree vector
-		arma::mat adj_matrix;
-		arma::rowvec degrees;
-
+		// Jump position
+		int next_pos = -1;
 
 		// Useful global variables
-		bool contig_end;
-		int num_alignments;
 		int ref; 
 		std::string contig_name;
 
@@ -81,8 +30,7 @@ class Graph {
 
 		Graph(int ref_num, std::string ref_name) {
 
-			// Initialize matrix and contig number and name
-			adj_matrix = arma::mat(5000, 5000, arma::fill::zeros);
+			// Initialize contig number and name
 			ref = ref_num;
 			contig_name = ref_name;
 
@@ -92,24 +40,40 @@ class Graph {
 	////////////////////////////
 	// Methods
 
+
+		void reset() {
+
+			start = -1;
+			end = -1;
+			strand = -1;
+			nodes = 1;
+			next_pos = -1;
+			junct_start = -1; // Will be implemented later to account for splicing
+			junct_stop = -1;
+
+		}
+
 		///////////////////////
 		// Create Adjancecy Matrix and Populate Start / End / Char Arrays.
 
-		void create_adjacency(BamReader &inFile, BamAlignment &alignment, Parameters &parameters) {
+		void create_adjacency(BamReader &inFile, BamAlignment &alignment, Parameters &parameters, 
+							  std::string &next_id, int *dead_end) {
 
 			// Initialize loop variables
-			int n;
 			int temp_end;
-			num_alignments = 0;
-			contig_end = false;
+			int temp_strand;
 
-			while (num_alignments < 5000) {
+			while (true) {
 
-				inFile.GetNextAlignment(alignment);
+				// If end of file is reached
+				if (!inFile.GetNextAlignment(alignment)){
+					next_pos = 0;
+					break;
+				}
 
 				// If next chromosome is reached, get out of town.
 				if (alignment.RefID > ref) {
-					contig_end = true;
+					next_pos = 0;
 					break;
 				}
 
@@ -126,263 +90,146 @@ class Graph {
 				// get alignment end 
 				temp_end = alignment.GetEndPosition() - 1;
 
-				// If alignment spans double its actual length in bases, ignore it, its trash
-				if ((2 * alignment.Length) <= (temp_end - alignment.Position)) {
+				// // If alignment spans double its actual length in bases, ignore it, its trash
+				// if ((50000) <= (temp_end - alignment.Position)) {
+				// 	continue;
+				// }
+
+				// get strand
+				temp_strand = alignment.IsReverseStrand();
+
+				// Check if cluster has been initialized
+				if (start == -1) {
+					
+					// If new cluster or next id matches
+					if (next_id == alignment.Name || next_id == "NA") {
+						start = alignment.Position;
+						end = temp_end;
+						strand = temp_strand;
+						next_id = "READY";
+					}
+
 					continue;
 				}
 
-				// read is ok, continue with populating vectors and matrix
-				end_positions[num_alignments] = (temp_end > end_positions[num_alignments - 1]) ? temp_end : end_positions[num_alignments -1]; 
-				start_positions[num_alignments] = alignment.Position;
-				strands[num_alignments] = (alignment.IsReverseStrand()) ? '-' : '+';
+				// Check strand
+				if (temp_strand != strand) {
+
+					if (next_id == "READY" && alignment.Position > dead_end[temp_strand]) {
+						next_id = alignment.Name;
+						next_pos = alignment.Position;
+					}
+
+					continue;
+				}
 
 
-				// find overlapping reads preceding this one in bam file
-				n = num_alignments - 1;
+				// if (alignment.Name == "D00689:146:C9B2EANXX:8:2112:3249:23489#TAATCG") {
+				// 	std::cerr << "##########" << "\n" << junct_start << "\t" << junct_stop << "\n";
+				// 	std::cerr << (alignment.Position <= end) << "\n";
+				// 	std::cerr << (alignment.Position < junct_start) << "\t" << (temp_end > junct_stop) << "\n";
+				// 	std::cerr << ((alignment.Position < junct_start) || (temp_end > junct_stop)) << "\n";
+				// 	std::cerr << ((alignment.Position <= end) && ((alignment.Position < junct_start) || (temp_end > junct_stop))) << "\n";
+				// }
 
-				while (n >= 0) {
+				// if reads overlap
+				if ((alignment.Position <= end) && 
+					((alignment.Position < junct_start) || (temp_end > junct_stop))) {
 
-					// if read is too far ahead to overlap, break
-					if (alignment.Position > end_positions[n]) {
+					nodes ++;
+
+					if (temp_end > end) {
+						end = temp_end;
+
+					}
+
+					if (junct_stop > alignment.Position) {
+						junct_stop = alignment.Position;
+					}
+
+					int temp_junct_start = alignment.Position;
+					int temp_junct_stop = -1;
+
+					for (int i = 0; i < alignment.CigarData.size(); i++) {
+
+						if (alignment.CigarData[i].Type == 'N') {
+							temp_junct_stop = temp_junct_start + alignment.CigarData[i].Length;
+							break;
+
+						} else if (alignment.CigarData[i].Type == 'M' || alignment.CigarData[i].Type == 'D') {
+							temp_junct_start += alignment.CigarData[i].Length;
+
+						}
+					}
+
+					if (temp_junct_stop != -1) {
+
+						junct_start = (junct_start > temp_junct_start) ? junct_start : temp_junct_start;
+						junct_stop = (junct_stop < temp_junct_stop && junct_stop != -1) ? junct_stop : temp_junct_stop;
+
+					} else if ((end > junct_start) && (junct_start != -1)) { 
+						junct_start = temp_end;
+
+					}
+
+
+				} else {
+
+					if (nodes == 1) {
+						start = alignment.Position;
+						end = temp_end;
+						strand = temp_strand;
+						continue;
+
+					} else {
+
+						// Hopefully prevents repeating read clusters
+						dead_end[strand] = end;
+
+						if (next_id == "READY") {
+							next_id = alignment.Name;
+							next_pos = alignment.Position;
+						}
 						break;
-
-					// if reads overlap
-					} else if (alignment.Position <= end_positions[n] && strands[num_alignments] == strands[n]) {
-						adj_matrix(num_alignments, n) = 1;
-						adj_matrix(n, num_alignments) = 1;
-
-					} 
-
-					n--;
+					}
 
 				}
 
-				num_alignments++;
-
 			}
 
-
 		}
-
-
-		///////////////////////
-		// Gets degree of nodes
-
-		void get_degrees() {
-
-			degrees = arma::sum(adj_matrix, 0);
-		}
-
 
 		///////////////////////
 		// gets next position to jump to in next iteration
 
 		int get_jump() {
-
-			int jump;
-
-			// Find approprite spot to break, we can't cut a group in half can we?
-			if (num_alignments < 5000 || contig_end) {
-				jump = 0;
-
-			} else {
-				jump = end_positions[num_alignments - 1] + 1;
-			}
-
-			return jump;
+			return next_pos;
 		}
-
 
 		///////////////////////
-		// checks if last cluster is incomplete
+		// report count of recent cluster
 
-		int check_overflow(BamReader &inFile, BamAlignment &alignment) {
+		void get_counts(char stranded) {
+		
+			char s;
 
-			char next_strand;
-			int index_overflow = 0;
-			
-			// Check if the last node checked concluded a group.
-			if (degrees[num_alignments - 1] != 0) {
-
-				// Check following alignments to see if and where groups stops
-				while (true) {
-
-					inFile.GetNextAlignment(alignment);
-					next_strand = (alignment.IsReverseStrand()) ? '-' : '+';
-
-
-					if (next_strand == strands[num_alignments - 1]) {
-
-						// check if overlap with next read; 
-						if (alignment.Position <= end_positions[num_alignments - 1]) {
-							return index_overflow;
-
-
-						// If read does not overlap, overflow variables are set to 0 and counts for last group are reported.
-						} else {													
-							return -1;
-
-						}
-
-					// if next read is wrong strand, keep searching
-					} else {
-						index_overflow ++;
-						continue;
-
-					}
-
-				}
-
-			// If degree of last node is zero, no need to report
+			if (stranded == 'f') {
+				s = (strand == 1) ? '-' : '+';
 			} else {
-				return -1;
-
+				s = (strand == 1) ? '+' : '-';
 			}
+
+
+			/// SOMETHING IN HERE REPORTS A JUNCT START > JUNCT STOP, NEEDS A FIX
+
+			std::cout << contig_name << "\t" << s << "\t" << start + 1 << "\t" 
+					  << end + 1 << "\t" << junct_start << "\t" 
+					  << junct_stop << "\t" << nodes << "\n"; 
+		
+			// if (junct_start != -1 && junct_stop != -1) {
+			// 	std::cerr << junct_start << "\t" << junct_stop << "\n";
+			// }
 		}
 
-
-		///////////////////////
-		// gets clusters by counting connected nodes and checking for overflows (this one's a bit rough....)
-
-		void get_clusters(BamReader &inFile, BamAlignment &alignment, Parameters &parameters, Overflow &overflow) {
-
-			// Initialize variables for counting reads by nodes in their graphs
-			int i = 0;
-			int x;
-			int j;
-
-			int increment;		// i offset
-			int nodes;			// # of counts
-			int max;			// max # of nodes
-			int peak;			// location of peak
-			char strand;		// group strand
-			int start;			// group start
-			int stop;			// group stop
-
-			while(i < num_alignments) {
-
-				increment = i + 1;
-
-				// if nodes meet min connectedness requirement
-				if (degrees[i] >= parameters.min_cov) {
-
-					// initialize group variables. Max and counts.
-					// max serves as "peak" to represent graph. It's arbitrary.
-					if (i == overflow.index_overflow && overflow.count_overflow != 0) {
-
-						nodes = overflow.count_overflow;
-						max = overflow.max_overflow;
-						peak = overflow.peak_overflow;
-						start = overflow.start;
-						stop = overflow.stop;
-
-					} else {
-
-						nodes = 1;
-						max = degrees[i];
-						peak = round((end_positions[i] + start_positions[i]) / 2); 
-						start = start_positions[i];
-						stop = end_positions[i];
-					}
-
-					strand = strands[i];
-
-					// Search upstream of node
-					x = i;
-					j = i - 1;
-					while (j >= 0 && end_positions[j] > start_positions[x]) {
-
-						if (strands[x] == strands[j]) {
-
-							if (adj_matrix(x, j) == 0) {
-								break;
-						
-							} else {
-
-								nodes++;
-								x = j;
-								start = start_positions[j];
-
-
-								if (degrees[j] > max) {
-									max = degrees[j];
-									peak = round((end_positions[j] + start_positions[j]) / 2);
-
-								}
-							
-							}
-						}
-
-						j--;
-
-					}
-
-					// Search downstream of node
-					x = i;
-					j = i + 1;
-
-					while (j < num_alignments && end_positions[x] > start_positions[j]) {
-
-
-						if (strands[x] == strands[j]) {
-
-							if (adj_matrix(x, j) == 0) {
-								break;
-						
-							} else {
-
-								nodes++;
-
-								if (end_positions[j] > end_positions[x]) {
-									x = j;
-									stop = end_positions[j];
-								}
-
-								if (degrees[j] > max) {
-									max = degrees[j];
-									peak = round((end_positions[j] + start_positions[j]) / 2);
-
-								}
-							
-							}
-						}
-
-						j++;
-
-					}
-
-					// increment increment :)
-					increment = j + 1;
-
-					if (increment < num_alignments) {
-						// report read counts
-						std::cout << contig_name << "\t" << strand << "\t" << start << "\t"
-								  << stop << "\t" << peak << "\t" <<  nodes << "\n";
-	
-					}
-				}
-
-				i = increment;
-
-
-			}
-			
-			int incomplete_offset = this -> check_overflow(inFile, alignment);
-
-			// Check if last cluster is complete
-			if (incomplete_offset != -1) {
-				overflow.update(incomplete_offset, nodes, max, peak, start, stop);
-			
-			} else {
-				// report read coutns
-				std::cout << contig_name << "\t" << strand << "\t" << start << "\t"
-						  << stop << "\t" << peak << "\t" <<  nodes << "\n";
-
-				// reset overflow object
-				overflow.reset();
-			
-			}
-
-		}
 };
 

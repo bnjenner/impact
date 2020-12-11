@@ -8,6 +8,7 @@
 #include <fstream>
 #include <armadillo>
 #include "api/BamReader.h" 
+#include "api/BamAux.h"
 #include "lib/parser.h"
 #include "lib/utils.h"
 #include "lib/peaks.h"
@@ -24,6 +25,14 @@ void open_alignment(AlignmentFile *alignment) {
 //     annotation -> open();
 // }
 
+void count_thread(const ImpactArguments *args, int ref) {
+
+    AlignmentFile alignment(args);
+    alignment.open();
+    alignment.get_counts(ref);
+    alignment.close();
+}
+
 
 // Main 
 int main(int argc, char const ** argv) {
@@ -38,29 +47,64 @@ int main(int argc, char const ** argv) {
     if (res != seqan::ArgumentParser::PARSE_OK) {
             return res;
     }
-
     
     std::cerr << "[IMPACT]\n";
 
     std::cerr << "[Parsing Input Files...]\n";
 
-    // Construct alignment object in thread
     AlignmentFile alignment(&args);
-    std::thread align_thread(open_alignment, &alignment);
+    alignment.open();
+    alignment.close(); 
+
+    // Construct alignment object in thread
+    // AlignmentFile alignment(&args);
+    // std::thread align_thread(open_alignment, &alignment);
 
     // Construct annotation object in thread
     // AnnotationFile annotation(&args);
     // std::thread annotate_thread(open_annotation, &annotation);
 
     // join threads
-    align_thread.join();
+    //align_thread.join();
     //annotate_thread.join();
 
-    std::cerr << "[Counting Reads...]\n";
-    alignment.get_counts(0);
+    // int i = 0;
+    // while (i < alignment.references.size()) {
+    //     std::cerr << "[Counting from " << alignment.contig_cache[i] << "...]\n";
+    //     alignment.get_counts(i);
+    //     i ++;
+    //     break;
+    // }
 
     // Close alignment file
-    alignment.close();
+    //alignment.close();
+
+    int i = 0;
+    int n = 1; // alignment.references.size();
+
+
+    while (i < n){
+
+        std::cerr << "[Counting from " << alignment.contig_cache[i] << "...]\n";
+        std::thread thread1(count_thread, &args, i);
+
+        i++;
+
+        // std::cerr << "[Counting from " << alignment.contig_cache[i] << "...]\n";
+        // std::thread thread2(count_thread, &args, i);
+
+        // i++; 
+
+        // std::cerr << "[Counting from " << alignment.contig_cache[i] << "...]\n";
+        // std::thread thread3(count_thread, &args, i);
+
+        thread1.join();
+        // thread2.join();
+        // thread3.join();
+
+        // i++;
+    }
+
    	
    	auto stop = std::chrono::high_resolution_clock::now(); 
    	auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start); 
