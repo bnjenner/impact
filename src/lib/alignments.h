@@ -101,14 +101,14 @@ class AlignmentFile {
 
 			// Variable accounting for group cut off and name of first read in group 
 		    int jump = 1;
-			int dead_end[2] = {-1}; 		// 0 is '+'; 1 is '-'
+			int dead_zone[4] = {-1}; 		// 0 is '+'; 1 is '-'
 			std::string next_id = "NA";
 
 			// Create Graph object
 			Graph graph(ref, contig_cache[ref]);
 
 		    // while still reading reads on desired contig
-		    while (jump != 0) {
+		    while (jump > 0) {
 
 		    	// Jump to desired region in bam
 		    	if (!inFile.Jump(ref, jump)) {
@@ -116,15 +116,16 @@ class AlignmentFile {
 		    		break;
 		    	}
 
-				// Create adjency matrix and get numver of aligned reads
-				graph.create_adjacency(inFile, alignment, parameters, next_id, dead_end);
+				// Create adjency matrix and get number of aligned reads
+				graph.create_adjacency(inFile, alignment, parameters, next_id, dead_zone);
 
 				// report counts for read cluster
 				graph.print_counts(parameters.stranded);
 
 				// get jump for next itereation
 				jump = graph.get_jump();
-
+				
+				// reset graph structure
 				graph.reset();
 				
 		   	} 

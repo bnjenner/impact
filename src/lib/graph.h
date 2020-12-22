@@ -67,6 +67,10 @@ class Graph {
 				}
 			
 			}
+
+			if (temp_junct_stop == -1) {
+				temp_junct_start = -1;
+			}
 		}
 
 
@@ -74,7 +78,7 @@ class Graph {
 		// Create Adjancecy Matrix and Populate Start / End / Char Arrays.
 
 		void create_adjacency(BamReader &inFile, BamAlignment &alignment, Parameters &parameters, 
-							  std::string &next_id, int *dead_end) {
+							  std::string &next_id, int *dead_zone) {
 
 			// Initialize loop variables
 			int temp_end;
@@ -86,7 +90,6 @@ class Graph {
 
 				// If end of file is reached
 				if (!inFile.GetNextAlignment(alignment)){
-					next_pos = 0;
 					break;
 				}
 
@@ -113,120 +116,125 @@ class Graph {
 				// get alignment end 
 				temp_end = alignment.GetEndPosition() - 1;
 
-				// // If alignment spans double its actual length in bases, ignore it, its trash
-				// if ((50000) <= (temp_end - alignment.Position)) {
-				// 	continue;
-				// }
-
 				// get strand
 				temp_strand = alignment.IsReverseStrand();
 
-
+				// reset splice site variables
 				temp_junct_start = alignment.Position;
 				temp_junct_stop = -1;
 
+				// calculate splice sites
 				calculate_splice(alignment, temp_junct_start, temp_junct_stop);
+						
 
-				// Check if cluster has been initialized
+				// Check if new cluster hasnt been initialized
 				if (start == -1) {
 
 					// If new cluster or next id matches
 					if (next_id == alignment.Name || next_id == "NA") {
+
+						// begin new gene cluster
 						start = alignment.Position;
 						end = temp_end;
 						strand = temp_strand;
 						next_id = "READY";
+						next_pos = 0;
 						nodes = 1;
 
+						// determine if splice junction is present
 						if (temp_junct_stop != -1) {
 
 							junct_start = temp_junct_start;
 							junct_stop = temp_junct_stop;
 
 						}
-
 					}
 
 					continue;
 				}
 
-				// Check strand
+				// Check if strand is the same as read cluster
 				if (temp_strand != strand) {
-
-					if (alignment.Name == "A01102:83:HCWVFDSXY:2:2321:17924:30686") {
-						std::cerr << next_id << "\t" 
-								  << alignment.Position << "\t" << dead_end[temp_strand] << "\n";
-					}
 					
-					if ((next_id == "READY") && (alignment.Position > dead_end[temp_strand])) {
+					// if not, and no next ID is found, assign net
+					if ((next_id == "READY") && 
+						((alignment.Position > dead_zone[temp_strand + 2]) || (temp_end < dead_zone[temp_strand]))) {
 						next_id = alignment.Name;
 						next_pos = alignment.Position;
-					}
 
-					continue;
+					}
 				}
 
 
-				// if reads overlap
-				if ((alignment.Position <= end) && 
+				// if read overlaps wit hread cluster (excluding splice junction)
+				if ((alignment.Position <= end) && (temp_strand == strand) &&
 					(((alignment.Position < junct_start) || (junct_start == -1)) || 
 						((temp_end > junct_stop) && (temp_junct_stop < junct_stop) && (junct_stop != -1)))) {
 
-					if (start == 25892048) {
-						std::cerr << alignment.Name << "\t" << alignment.Position << "\t" << temp_end << "\n"
-								  << "\t" << junct_start << "\t" << junct_stop << "\n";
-					}
-
+					// add read to group
 					nodes ++;
 
+					// elongate read cluster end
 					if (temp_end > end) {
 						end = temp_end;
-
 					}
 
-					if (junct_stop > alignment.Position) {
+					////////////////////////////////////////
+
+					// FOLLOWING CODE NEEDS TO BE EDITTED TO ACCOUNT FOR MULTIPLE SPLICE SITES
+
+					// reassign slice junction bounds if read is within splice bounds
+					if ((junct_stop > alignment.Position) && (alignment.Position > junct_start)) {
 						junct_stop = alignment.Position;
 					}
 
-					if (temp_junct_stop != -1) {
-
-						junct_start = (junct_start > temp_junct_start) ? junct_start : temp_junct_start;
-						junct_stop = (junct_stop < temp_junct_stop && junct_stop != -1) ? junct_stop : temp_junct_stop;
-
-					} else if ((end > junct_start) && (junct_start != -1)) { 
+					if ((temp_end > junct_start) && (junct_start != -1)) { 
 						junct_start = temp_end;
-
 					} 
+
+					junct_start = (junct_start > temp_junct_start) ? junct_start : temp_junct_start;
+					junct_stop = ((junct_stop < temp_junct_stop) && (junct_stop != -1)) ? junct_stop : temp_junct_stop;
+
+					////////////////////////////////////////
+
 
 				} else {
 
-					if (nodes == 1) {
-						start = alignment.Position;
-						end = temp_end;
-						strand = temp_strand;
-
-						if (temp_junct_stop != -1) {
+					// If read has no overlapp and new read is passed
+					if ((nodes == 1) && (alignment.Position > end)) {
+					
+						// if no new cluster, assign new cluster 
+						if (next_id == "READY") { 
+							start = alignment.Position;
+							end = temp_end;
+							strand = temp_strand;
+							next_id = "READY";
+							next_pos = 0;
 
 							junct_start = temp_junct_start;
 							junct_stop = temp_junct_stop;
 
+						// or go to new cluster
 						} else {
-							junct_start = -1;
-							junct_stop = -1;
+							break;
 						}
 
-						continue;
 
 					} else {
 
-					// Hopefully prevents repeating read clusters
-						dead_end[strand] = end;
-
+						// if new no new 
 						if (next_id == "READY") {
 							next_id = alignment.Name;
 							next_pos = alignment.Position;
 						}
-						break;
+
+						// Hopefully prevents repeating read clusters
+						if (alignment.Position > end) {
+							
+							dead_zone[strand] = (junct_stop == -1) ? start : junct_stop;
+							dead_zone[strand + 2] = end;
+							break;
+						}
 					}
 
 				}
@@ -249,7 +257,7 @@ class Graph {
 		
 			char s;
 
-			if (start == -1) {
+			if ((start == -1) || nodes == 1) {
 				return;
 			}
 
