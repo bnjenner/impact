@@ -46,12 +46,29 @@ class Graph {
 			start = -1;
 			end = -1;
 			strand = -1;
-			nodes = 1;
+			nodes = 0;
 			next_pos = -1;
 			junct_start = -1; // Will be implemented later to account for splicing
 			junct_stop = -1;
 
 		}
+
+		void calculate_splice(BamAlignment &alignment, int &temp_junct_start, int &temp_junct_stop) {
+
+			for (int i = 0; i < alignment.CigarData.size(); i++) {
+
+				if (alignment.CigarData[i].Type == 'N') {
+					temp_junct_stop = temp_junct_start + alignment.CigarData[i].Length;
+					break;
+
+				} else if (alignment.CigarData[i].Type == 'M' || alignment.CigarData[i].Type == 'D') {
+					temp_junct_start += alignment.CigarData[i].Length;
+
+				}
+			
+			}
+		}
+
 
 		///////////////////////
 		// Create Adjancecy Matrix and Populate Start / End / Char Arrays.
@@ -62,6 +79,8 @@ class Graph {
 			// Initialize loop variables
 			int temp_end;
 			int temp_strand;
+			int temp_junct_start;
+			int temp_junct_stop;
 
 			while (true) {
 
@@ -75,6 +94,10 @@ class Graph {
 				if (alignment.RefID > ref) {
 					next_pos = 0;
 					break;
+				}
+
+				if (alignment.IsDuplicate()) {
+					continue;
 				}
 
 				// Exclude secondary alignments
@@ -98,15 +121,30 @@ class Graph {
 				// get strand
 				temp_strand = alignment.IsReverseStrand();
 
+
+				temp_junct_start = alignment.Position;
+				temp_junct_stop = -1;
+
+				calculate_splice(alignment, temp_junct_start, temp_junct_stop);
+
 				// Check if cluster has been initialized
 				if (start == -1) {
-					
+
 					// If new cluster or next id matches
 					if (next_id == alignment.Name || next_id == "NA") {
 						start = alignment.Position;
 						end = temp_end;
 						strand = temp_strand;
 						next_id = "READY";
+						nodes = 1;
+
+						if (temp_junct_stop != -1) {
+
+							junct_start = temp_junct_start;
+							junct_stop = temp_junct_stop;
+
+						}
+
 					}
 
 					continue;
@@ -115,7 +153,12 @@ class Graph {
 				// Check strand
 				if (temp_strand != strand) {
 
-					if (next_id == "READY" && alignment.Position > dead_end[temp_strand]) {
+					if (alignment.Name == "A01102:83:HCWVFDSXY:2:2321:17924:30686") {
+						std::cerr << next_id << "\t" 
+								  << alignment.Position << "\t" << dead_end[temp_strand] << "\n";
+					}
+					
+					if ((next_id == "READY") && (alignment.Position > dead_end[temp_strand])) {
 						next_id = alignment.Name;
 						next_pos = alignment.Position;
 					}
@@ -124,17 +167,15 @@ class Graph {
 				}
 
 
-				// if (alignment.Name == "D00689:146:C9B2EANXX:8:2112:3249:23489#TAATCG") {
-				// 	std::cerr << "##########" << "\n" << junct_start << "\t" << junct_stop << "\n";
-				// 	std::cerr << (alignment.Position <= end) << "\n";
-				// 	std::cerr << (alignment.Position < junct_start) << "\t" << (temp_end > junct_stop) << "\n";
-				// 	std::cerr << ((alignment.Position < junct_start) || (temp_end > junct_stop)) << "\n";
-				// 	std::cerr << ((alignment.Position <= end) && ((alignment.Position < junct_start) || (temp_end > junct_stop))) << "\n";
-				// }
-
 				// if reads overlap
 				if ((alignment.Position <= end) && 
-					((alignment.Position < junct_start) || (temp_end > junct_stop))) {
+					(((alignment.Position < junct_start) || (junct_start == -1)) || 
+						((temp_end > junct_stop) && (temp_junct_stop < junct_stop) && (junct_stop != -1)))) {
+
+					if (start == 25892048) {
+						std::cerr << alignment.Name << "\t" << alignment.Position << "\t" << temp_end << "\n"
+								  << "\t" << junct_start << "\t" << junct_stop << "\n";
+					}
 
 					nodes ++;
 
@@ -147,21 +188,6 @@ class Graph {
 						junct_stop = alignment.Position;
 					}
 
-					int temp_junct_start = alignment.Position;
-					int temp_junct_stop = -1;
-
-					for (int i = 0; i < alignment.CigarData.size(); i++) {
-
-						if (alignment.CigarData[i].Type == 'N') {
-							temp_junct_stop = temp_junct_start + alignment.CigarData[i].Length;
-							break;
-
-						} else if (alignment.CigarData[i].Type == 'M' || alignment.CigarData[i].Type == 'D') {
-							temp_junct_start += alignment.CigarData[i].Length;
-
-						}
-					}
-
 					if (temp_junct_stop != -1) {
 
 						junct_start = (junct_start > temp_junct_start) ? junct_start : temp_junct_start;
@@ -170,8 +196,7 @@ class Graph {
 					} else if ((end > junct_start) && (junct_start != -1)) { 
 						junct_start = temp_end;
 
-					}
-
+					} 
 
 				} else {
 
@@ -179,11 +204,22 @@ class Graph {
 						start = alignment.Position;
 						end = temp_end;
 						strand = temp_strand;
+
+						if (temp_junct_stop != -1) {
+
+							junct_start = temp_junct_start;
+							junct_stop = temp_junct_stop;
+
+						} else {
+							junct_start = -1;
+							junct_stop = -1;
+						}
+
 						continue;
 
 					} else {
 
-						// Hopefully prevents repeating read clusters
+					// Hopefully prevents repeating read clusters
 						dead_end[strand] = end;
 
 						if (next_id == "READY") {
@@ -209,9 +245,13 @@ class Graph {
 		///////////////////////
 		// report count of recent cluster
 
-		void get_counts(char stranded) {
+		void print_counts(char stranded) {
 		
 			char s;
+
+			if (start == -1) {
+				return;
+			}
 
 			if (stranded == 'f') {
 				s = (strand == 1) ? '-' : '+';
@@ -219,12 +259,12 @@ class Graph {
 				s = (strand == 1) ? '+' : '-';
 			}
 
-
 			/// SOMETHING IN HERE REPORTS A JUNCT START > JUNCT STOP, NEEDS A FIX
 
 			std::cout << contig_name << "\t" << s << "\t" << start + 1 << "\t" 
 					  << end + 1 << "\t" << junct_start << "\t" 
 					  << junct_stop << "\t" << nodes << "\n"; 
+
 		
 			// if (junct_start != -1 && junct_stop != -1) {
 			// 	std::cerr << junct_start << "\t" << junct_stop << "\n";

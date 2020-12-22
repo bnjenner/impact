@@ -91,11 +91,8 @@ class AlignmentFile {
 		// Close files
 
 		void close() {
-
 			inFile.Close();
-
 		}
-
 
 		///////////////////////
 		// Grab Alignments within Interval Using Bam Index
@@ -122,11 +119,11 @@ class AlignmentFile {
 				// Create adjency matrix and get numver of aligned reads
 				graph.create_adjacency(inFile, alignment, parameters, next_id, dead_end);
 
+				// report counts for read cluster
+				graph.print_counts(parameters.stranded);
+
 				// get jump for next itereation
 				jump = graph.get_jump();
-
-				// report counts for read cluster
-				graph.get_counts(parameters.stranded);
 
 				graph.reset();
 				

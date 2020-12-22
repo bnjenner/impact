@@ -80,10 +80,9 @@ int main(int argc, char const ** argv) {
     //alignment.close();
 
     int i = 0;
-    int n = 1; // alignment.references.size();
+    int n = alignment.references.size();
 
-
-    while (i < n){
+    while (i < n) {
 
         std::cerr << "[Counting from " << alignment.contig_cache[i] << "...]\n";
         std::thread thread1(count_thread, &args, i);
