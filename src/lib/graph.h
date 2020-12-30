@@ -17,6 +17,9 @@ class Graph {
 		int junct_start = -1; // Will be implemented later to account for splicing
 		int junct_stop = -1;
 
+		// Clusters
+		std::vector<int> clust_vec(2, -1); // array of cluster start and stops (evens are starts, odds are ends)
+		int clust_count = 1;
 		// Jump position
 		int next_pos = -1;
 
@@ -53,6 +56,14 @@ class Graph {
 
 		}
 
+		void insert_cluster(int start_sw, int end_sw) {
+
+			clust_vec.push_back(start_sw);
+			clust_vec.push_back(end_sw);
+
+			std::sort(clust_vec.begin(), clust_vec.end());
+		}
+
 		void calculate_splice(BamAlignment &alignment, int &temp_junct_start, int &temp_junct_stop) {
 
 			for (int i = 0; i < alignment.CigarData.size(); i++) {
@@ -71,6 +82,44 @@ class Graph {
 			if (temp_junct_stop == -1) {
 				temp_junct_start = -1;
 			}
+		}
+
+		void check_overlap(BamAlignment &alignment, int &temp_end) {
+
+			// for all clusters
+			for (int i = 0; i < clust_count; i++) {
+
+				// check if beginning or end of read exists within a cluster
+				if ((alignment.Position > clust_vec[i * 2]) && (alignment.Position < clust_vec[(i * 2) + 1])) {
+					return 1;
+
+				} else if ((temp_end > clust_vec[i * 2]) && (temp_end < clust_vec[(i * 2) + 1])) {
+					return 1
+				}
+
+			}
+
+			return 0;
+		}
+
+		void modify_cluster(BamAlignment &alignment, int &temp_end, int &temp_junct_start, int &temp_junct_stop) {
+
+			// for all clusters
+			for (int i = 0; i < clust_count; i++) {
+
+				if (alignment.Position < clust_vec[(i * 2) + 1]) {
+
+					if (temp_end < clust_vec[(i * 2) + 1]) {
+						insert_cluster(alignment.Position, temp_end);
+					}
+
+					clust_vec[(i * 2) + 1] = ((temp_end > temp_junct_stop) && (temp_junct_stop == -1)) ? junct_stop : temp_junct_stop;
+
+				}
+
+			}
+
+			return 0;
 		}
 
 
@@ -141,13 +190,23 @@ class Graph {
 						next_pos = 0;
 						nodes = 1;
 
-						// determine if splice junction is present
-						if (temp_junct_stop != -1) {
+						junct_start = temp_junct_start;
+						junct_stop = temp_junct_stop;
 
-							junct_start = temp_junct_start;
-							junct_stop = temp_junct_stop;
+						if (junct_start != -1) {
 
+							clust_vec[0] = start;
+							clust_vec[1] = junct_start;
+
+							clust_vec.push_back(junct_stop);
+							clust_vec.push_back(end);
+
+							clust_count = 2;
+						} else {
+							clust_array[0] = start;
+							clust_array[1] = end;
 						}
+
 					}
 
 					continue;
@@ -167,9 +226,7 @@ class Graph {
 
 
 				// if read overlaps wit hread cluster (excluding splice junction)
-				if ((alignment.Position <= end) && (temp_strand == strand) &&
-					(((alignment.Position < junct_start) || (junct_start == -1)) || 
-						((temp_end > junct_stop) && (temp_junct_stop < junct_stop) && (junct_stop != -1)))) {
+				if ((temp_strand == strand) && check_overlap(alignment, temp_end)) {
 
 					// add read to group
 					nodes ++;
@@ -213,6 +270,18 @@ class Graph {
 
 							junct_start = temp_junct_start;
 							junct_stop = temp_junct_stop;
+
+							if (junct_start != -1) {
+								clust_array[0] = start;
+								clust_array[1] = junct_start;
+								clust_vec.push_back(junct_stop);
+								clust_vec.push_back(end);
+								clust_count = 2;
+							} else {
+								clust_array[0] = start;
+								clust_array[1] = end;
+								clust_count = 1;
+							}
 
 						// or go to new cluster
 						} else {
