@@ -127,6 +127,8 @@ class AlignmentFile {
 				
 				// reset graph structure
 				graph.reset();
+
+				break;
 				
 		   	} 
 

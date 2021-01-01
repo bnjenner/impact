@@ -102,6 +102,8 @@ int main(int argc, char const ** argv) {
         // thread3.join();
 
         // i++;
+
+        break;
     }
 
    	

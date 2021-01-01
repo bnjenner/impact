@@ -18,7 +18,7 @@ class Graph {
 		int junct_stop = -1;
 
 		// Clusters
-		std::vector<int> clust_vec(2, -1); // array of cluster start and stops (evens are starts, odds are ends)
+		std::vector<int> clust_vec{-1, -1}; // array of cluster start and stops (evens are starts, odds are ends)
 		int clust_count = 1;
 		// Jump position
 		int next_pos = -1;
@@ -56,14 +56,6 @@ class Graph {
 
 		}
 
-		void insert_cluster(int start_sw, int end_sw) {
-
-			clust_vec.push_back(start_sw);
-			clust_vec.push_back(end_sw);
-
-			std::sort(clust_vec.begin(), clust_vec.end());
-		}
-
 		void calculate_splice(BamAlignment &alignment, int &temp_junct_start, int &temp_junct_stop) {
 
 			for (int i = 0; i < alignment.CigarData.size(); i++) {
@@ -84,7 +76,7 @@ class Graph {
 			}
 		}
 
-		void check_overlap(BamAlignment &alignment, int &temp_end) {
+		int check_overlap(BamAlignment &alignment, int &temp_end) {
 
 			// for all clusters
 			for (int i = 0; i < clust_count; i++) {
@@ -94,7 +86,7 @@ class Graph {
 					return 1;
 
 				} else if ((temp_end > clust_vec[i * 2]) && (temp_end < clust_vec[(i * 2) + 1])) {
-					return 1
+					return 1;
 				}
 
 			}
@@ -102,24 +94,126 @@ class Graph {
 			return 0;
 		}
 
-		void modify_cluster(BamAlignment &alignment, int &temp_end, int &temp_junct_start, int &temp_junct_stop) {
+
+		void insert_splice(std::vector<int> &temp_vec, int start_sw, int end_sw) {
+
+			temp_vec.push_back(start_sw);
+			temp_vec.push_back(end_sw);
+
+			std::sort(temp_vec.begin(), temp_vec.end());
+
+		}
+
+		// BamAlignment &alignment, 
+		void modify_cluster(int &temp_start, int &temp_end, int &temp_junct_start, int &temp_junct_stop) {
+
+			std::vector<int> temp_vec(clust_vec);
+			int count_buffer = 0;
 
 			// for all clusters
 			for (int i = 0; i < clust_count; i++) {
 
-				if (alignment.Position < clust_vec[(i * 2) + 1]) {
+				// Precedes Cluster and Overlaps
+				if ((temp_start < clust_vec[(i * 2)]) && (temp_end > clust_vec[(i * 2)])) {
 
-					if (temp_end < clust_vec[(i * 2) + 1]) {
-						insert_cluster(alignment.Position, temp_end);
+					// is it a spliced alignment?
+					if (temp_junct_start == -1) {
+
+						// 5' Extension
+						temp_vec[(i * 2)] = temp_start;
+
+						// 3' Extension
+						if (temp_end > clust_vec[(i * 2) + 1]) {
+							temp_vec[(i * 2) + 1] = temp_end;
+
+						}
+
+					// Check for 5' Insertion
+					} else if (temp_junct_start < clust_vec[(i * 2)]) {
+
+						// Check for 5' Extension
+						if (temp_junct_stop < clust_vec[(i * 2)]) {
+							temp_vec[(i * 2)] = temp_junct_stop;
+						}
+
+						// Check for 3' Extension
+						if (temp_end > clust_vec[(i * 2) + 1]) {
+							temp_vec[(i * 2) + 1] = temp_end;
+						}
+
+						// NEEDS TO BE DONE TO NEW VEC
+						insert_splice(temp_vec, temp_start, temp_junct_start);
+						count_buffer ++;
+
+
+
+					// Check for 3' Insertion
+					} else if (temp_junct_stop > clust_vec[(i * 2) + 1]) {
+						
+						// Check for 5' Extension
+						if (temp_junct_start > clust_vec[(i * 2)]) {
+							temp_vec[(i * 2)] = temp_start;
+						}
+
+						// Check for 3' Extension
+						if (temp_junct_start > clust_vec[(i * 2) + 1]) {
+							temp_vec[(i * 2) + 1] = temp_junct_start;
+						}
+
+						// NEEDS TO BE DONE TO NEW VEC
+						insert_splice(temp_vec, temp_junct_stop, temp_end);
+						count_buffer ++;
+
+
+					} else {
+
+						// Check for 5' Extension
+						if (temp_junct_start > clust_vec[(i * 2)]) {
+							temp_vec[(i * 2)] = temp_start;
+						}
+
+						// Check for 3' Extension
+						if (temp_junct_stop < clust_vec[(i * 2) + 1]) {
+							temp_vec[(i * 2) + 1] = temp_end;
+						}
+
 					}
+				
+				// Follows cluster and overlaps
+				} else if ((temp_start > clust_vec[(i * 2)]) && (temp_start < clust_vec[(i * 2) + 1])) {
 
-					clust_vec[(i * 2) + 1] = ((temp_end > temp_junct_stop) && (temp_junct_stop == -1)) ? junct_stop : temp_junct_stop;
+					// is it a spliced alignment?
+					if (temp_junct_start == -1) {
+
+						// 3' Extension
+						if (temp_end > clust_vec[(i * 2) + 1]) {
+							temp_vec[(i * 2) + 1] = temp_end;
+						}
+
+					} else { 
+
+						// Check for 3' Extension
+						if (temp_junct_start > clust_vec[(i * 2) + 1]) {
+							temp_vec[(i * 2) + 1] = temp_junct_start;
+						} 
+
+						// Check for 3' Insertion
+						if (temp_junct_stop > clust_vec[(i * 2) + 1]) {
+
+							// NEEDS TO BE DONE TO NEW VEC
+							insert_splice(temp_vec, temp_junct_stop, temp_end);
+							count_buffer ++;
+						
+						}
+
+					}
 
 				}
 
 			}
 
-			return 0;
+			clust_vec = temp_vec;
+
 		}
 
 
@@ -130,12 +224,47 @@ class Graph {
 							  std::string &next_id, int *dead_zone) {
 
 			// Initialize loop variables
+			int temp_start;
 			int temp_end;
 			int temp_strand;
 			int temp_junct_start;
 			int temp_junct_stop;
 
 			while (true) {
+
+				////////////////////////////////////////////
+				// TEST BLOCK
+
+				clust_count = 1;
+
+				start = 10;
+				end = 20;
+
+				clust_vec[0] = start;
+				clust_vec[1] = end;
+
+				temp_start = 15;
+				temp_end = 30; 
+
+				temp_junct_start = 22;
+				temp_junct_stop = 25;
+
+				for (int x = 0; x < clust_vec.size(); x++){
+					std::cerr << clust_vec[x] << "\t"; 
+				}
+				std::cerr << "\n";
+
+				modify_cluster(temp_start, temp_end, temp_junct_start, temp_junct_stop);
+
+				for (int x = 0; x < clust_vec.size(); x++){
+					std::cerr << clust_vec[x] << "\t"; 
+				}
+				std::cerr << "\n";
+
+				break;
+
+
+				/////////////////////////////////////////////
 
 				// If end of file is reached
 				if (!inFile.GetNextAlignment(alignment)){
@@ -203,8 +332,8 @@ class Graph {
 
 							clust_count = 2;
 						} else {
-							clust_array[0] = start;
-							clust_array[1] = end;
+							clust_vec[0] = start;
+							clust_vec[1] = end;
 						}
 
 					}
@@ -230,6 +359,8 @@ class Graph {
 
 					// add read to group
 					nodes ++;
+
+					//modify_cluster(alignment, temp_end, temp_junct_start, temp_junct_stop);
 
 					// elongate read cluster end
 					if (temp_end > end) {
@@ -271,15 +402,16 @@ class Graph {
 							junct_start = temp_junct_start;
 							junct_stop = temp_junct_stop;
 
+
 							if (junct_start != -1) {
-								clust_array[0] = start;
-								clust_array[1] = junct_start;
+								clust_vec[0] = start;
+								clust_vec[1] = junct_start;
 								clust_vec.push_back(junct_stop);
 								clust_vec.push_back(end);
 								clust_count = 2;
 							} else {
-								clust_array[0] = start;
-								clust_array[1] = end;
+								clust_vec[0] = start;
+								clust_vec[1] = end;
 								clust_count = 1;
 							}
 
