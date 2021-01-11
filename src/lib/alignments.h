@@ -124,11 +124,9 @@ class AlignmentFile {
 
 				// get jump for next itereation
 				jump = graph.get_jump();
-				
+
 				// reset graph structure
 				graph.reset();
-
-				break;
 				
 		   	} 
 
