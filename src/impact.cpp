@@ -26,7 +26,6 @@ void open_alignment(AlignmentFile *alignment) {
 // }
 
 void count_thread(const ImpactArguments *args, int ref) {
-
     AlignmentFile alignment(args);
     alignment.open();
     alignment.get_counts(ref);
@@ -79,13 +78,15 @@ int main(int argc, char const ** argv) {
     // Close alignment file
     //alignment.close();
 
-    int i = 0;
+    int i = 21;
     int n = alignment.references.size();
 
     while (i < n) {
 
         std::cerr << "[Counting from " << alignment.contig_cache[i] << "...]\n";
         std::thread thread1(count_thread, &args, i);
+
+        std::cerr << i << "\n";
 
         i++;
 
@@ -103,6 +104,7 @@ int main(int argc, char const ** argv) {
 
         // i++;
 
+        break;
     }
 
    	

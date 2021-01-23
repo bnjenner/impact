@@ -94,41 +94,38 @@ class AlignmentFile {
 			inFile.Close();
 		}
 
+
 		///////////////////////
 		// Grab Alignments within Interval Using Bam Index
 		
 		void get_counts(int ref) {
 
 			// Variable accounting for group cut off and name of first read in group 
-		    int jump = 1;
-			int dead_zone[4] = {-1}; 		// 0 is '+'; 1 is '-'
+		    int jump = 0;
 			std::string next_id = "NA";
 
 			// Create Graph object
-			Graph graph(ref, contig_cache[ref]);
+			Graph graph(ref, contig_cache[ref], parameters);
 
-		    // while still reading reads on desired contig
-		    while (jump > 0) {
+			// Jump to desired region in bam
+	    	if (!inFile.Jump(ref, jump)) {
+	    		std::cerr << "[ERROR: Could not jump to region: " << ref << ":" << jump << ".]\n";
+	    		return;
+	    	}
 
-		    	// Jump to desired region in bam
-		    	if (!inFile.Jump(ref, jump)) {
-		    		std::cerr << "[ERROR: Could not jump to region: " << ref << ":" << jump << ".]\n";
-		    		break;
-		    	}
+			// Set head of graph
+			if (!graph.set_head(inFile, alignment)) {
+				return;
+			}
 
-				// Create adjency matrix and get number of aligned reads
-				graph.create_adjacency(inFile, alignment, parameters, next_id, dead_zone);
+			std::cerr << alignment.Name << "\t" << alignment.RefID <<"\n";
 
-				// report counts for read cluster
-				graph.print_counts(parameters.stranded);
+			// Create adjency matrix and get number of aligned reads
+			jump = graph.create_clusters(inFile, alignment);
 
-				// get jump for next itereation
-				jump = graph.get_jump();
+			// report counts for read cluster
+			graph.print_graph();
 
-				// reset graph structure
-				graph.reset();
-				
-		   	} 
 
 		}			
 
