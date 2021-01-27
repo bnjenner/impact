@@ -89,7 +89,6 @@ class AlignmentFile {
 
 		///////////////////////
 		// Close files
-
 		void close() {
 			inFile.Close();
 		}
@@ -97,7 +96,6 @@ class AlignmentFile {
 
 		///////////////////////
 		// Grab Alignments within Interval Using Bam Index
-		
 		void get_counts(int ref) {
 
 			// Variable accounting for group cut off and name of first read in group 
@@ -118,7 +116,7 @@ class AlignmentFile {
 				return;
 			}
 
-			std::cerr << alignment.Name << "\t" << alignment.RefID <<"\n";
+			//std::cerr << alignment.Name << "\t" << alignment.RefID <<"\n";
 
 			// Create adjency matrix and get number of aligned reads
 			jump = graph.create_clusters(inFile, alignment);

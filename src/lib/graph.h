@@ -57,6 +57,28 @@ class Node {
 
 		}
 
+		Node(int temp_start, int temp_stop, int temp_junct_start, int temp_junct_stop, int temp_strand) {
+
+			strand = temp_strand;
+			read_count = 1;
+
+			// Start position
+			clust_vec[0] = temp_start;
+
+			if (temp_junct_start != -1) {
+
+				clust_vec[1] = temp_junct_start;
+				clust_vec.push_back(temp_junct_stop);
+				clust_vec.push_back(temp_stop);
+				clust_count ++;
+
+			} else {
+				
+				clust_vec[1] = temp_stop;
+			}
+
+		}
+
 
 	////////////////////////////
 	// Methods
@@ -129,6 +151,7 @@ class Node {
 			if (strand != temp_strand) {
 				return 0;
 			}
+
 
 			// for all clusters
 			for (int i = 0; i < clust_count; i++) {
@@ -499,8 +522,8 @@ class Graph {
 		Parameters parameters;
 
 		// Node
-		Node *head;
-		Node *tail;
+		Node *head = NULL;
+		Node *tail = NULL;
 		Node temp;
 
 
@@ -557,6 +580,8 @@ class Graph {
 			temp = Node(alignment);
 			temp.ishead = 1;
 			head = &temp;
+
+			//std::cerr << "\tHEAD ALIGNMENT\t" << alignment.Name << "\n"; 
 			return 1;
 
 		}
@@ -586,8 +611,6 @@ class Graph {
 			// std::cerr << alignment.Name << "\n";
 
 			while (true) {
-
-				std::cerr << alignment.Name << "\n";
 
 				curr_node = tail;
 				
@@ -635,7 +658,6 @@ class Graph {
 					return 0;
 				}
 
-
 				// If next chromosome is reached, get out of town.
 				if (alignment.RefID > ref) {
 			        std::cerr << "[Finished Counting from " << contig_name << "...]\n";
@@ -677,7 +699,7 @@ class Graph {
 				if (temp_start > curr_node -> get_stop()) {
 
 					// Create node
-					Node *new_node = new Node(alignment);
+					Node *new_node = new Node(temp_start, temp_stop, temp_junct_start, temp_junct_stop, temp_strand);
 
 					// link nodes within graph
 					curr_node -> set_next(new_node);
@@ -689,22 +711,24 @@ class Graph {
 				
 				}
 
+
 				// find overlapping region
-				while ((temp_start < curr_node -> get_stop()) && (curr_node != NULL)) {
+				while ((curr_node != NULL) && (temp_start < curr_node -> get_stop()))  {
 
 					// Check if alignment overlaps with previous nodes
 					if (curr_node -> check_overlap(temp_start, temp_stop, temp_strand)) {
 						curr_node -> modify_cluster(temp_start, temp_stop, temp_junct_start, temp_junct_stop);
-						curr_node -> read_count ++; 
+						curr_node -> read_count ++;
+
 						break;
 
 					} else {
 						curr_node = curr_node -> prev;
+
 					}
 
-
 				}
-						
+
 			}
 
 			return 0;
@@ -716,8 +740,11 @@ class Graph {
 		void print_graph() {
 
 			Node *curr_node = head;
-			
-			std::cout << curr_node << "\n";
+
+			if (head == NULL) {
+				std::cerr << "NULL HEAD\n";
+			}
+
 
 			while (curr_node != NULL) {
 
@@ -725,8 +752,6 @@ class Graph {
 				curr_node = curr_node -> next;
 
 			}
-
-			//std::cerr << "Finished print" << std::endl;
 
 		}
 };

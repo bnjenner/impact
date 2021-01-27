@@ -78,15 +78,13 @@ int main(int argc, char const ** argv) {
     // Close alignment file
     //alignment.close();
 
-    int i = 21;
+    int i = 0;
     int n = alignment.references.size();
 
     while (i < n) {
 
         std::cerr << "[Counting from " << alignment.contig_cache[i] << "...]\n";
         std::thread thread1(count_thread, &args, i);
-
-        std::cerr << i << "\n";
 
         i++;
 
@@ -103,8 +101,6 @@ int main(int argc, char const ** argv) {
         // thread3.join();
 
         // i++;
-
-        break;
     }
 
    	
