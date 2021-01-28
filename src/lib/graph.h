@@ -656,11 +656,7 @@ class Graph {
 					std::cerr << "[End of File Reached.]\n";
 					return 0;
 				}
-
-				if (alignment.Name == "D00689:146:C9B2EANXX:8:2105:7308:82052#CGCGGA") {
-					std::cerr << "HERE WE ARE\n";
-				}
-
+				
 				// If next chromosome is reached, get out of town.
 				if (alignment.RefID > ref) {
 			        std::cerr << "[Finished Counting from " << contig_name << "...]\n";
@@ -682,10 +678,6 @@ class Graph {
 		       		continue;
 				}
 
-				if (alignment.Name == "D00689:146:C9B2EANXX:8:2105:7308:82052#CGCGGA") {
-					std::cerr << "Made it through checks\n";
-				}
-
 				// get alignment start
 				temp_start = alignment.Position;
 
@@ -702,11 +694,6 @@ class Graph {
 				// calculate splice sites
 				curr_node -> calculate_splice(alignment, temp_junct_start, temp_junct_stop);
 
-				if (alignment.Name == "D00689:146:C9B2EANXX:8:2105:7308:82052#CGCGGA") {
-					std::cerr << temp_start << "\t" << temp_stop << "\t"
-							  << temp_junct_start << "\t" << temp_junct_stop << "\n";
-				}
-
 				// check if alignment represents a new node
 				if ((temp_start > curr_node -> get_stop()) || (temp_strand != curr_node -> strand)) {
 
@@ -719,20 +706,9 @@ class Graph {
 					curr_node = new_node;
 					tail = curr_node;
 
-					if (alignment.Name == "D00689:146:C9B2EANXX:8:2105:7308:82052#CGCGGA") {
-						std::cerr << "new node" << "\n";
-					}
-
-
 					continue;
 				
 				}
-
-				if (alignment.Name == "D00689:146:C9B2EANXX:8:2105:7308:82052#CGCGGA") {
-					std::cerr << temp_start << "\t" << temp_stop << "\t"
-							  << temp_junct_start << "\t" << temp_junct_stop << "\n";
-				}
-
 
 				// find overlapping region
 				while ((curr_node != NULL) && (temp_start < curr_node -> get_stop()))  {
