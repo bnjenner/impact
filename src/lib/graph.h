@@ -656,7 +656,7 @@ class Graph {
 					std::cerr << "[End of File Reached.]\n";
 					return 0;
 				}
-				
+
 				// If next chromosome is reached, get out of town.
 				if (alignment.RefID > ref) {
 			        std::cerr << "[Finished Counting from " << contig_name << "...]\n";
@@ -748,7 +748,9 @@ class Graph {
 
 				next_node = curr_node -> next;
 
-				if ((next_node != NULL) && (curr_node -> get_stop() > next_node -> get_start())) {
+				if ((next_node != NULL) && 
+					((curr_node -> get_stop() > next_node -> get_start()) && 
+					 (curr_node -> strand == next_node -> strand))) {
 					std::cerr << "\tCHECK\t" << curr_node -> get_start() << "\n";
 				}
 
