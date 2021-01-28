@@ -152,7 +152,6 @@ class Node {
 				return 0;
 			}
 
-
 			// for all clusters
 			for (int i = 0; i < clust_count; i++) {
 
@@ -658,6 +657,10 @@ class Graph {
 					return 0;
 				}
 
+				if (alignment.Name == "D00689:146:C9B2EANXX:8:2105:7308:82052#CGCGGA") {
+					std::cerr << "HERE WE ARE\n";
+				}
+
 				// If next chromosome is reached, get out of town.
 				if (alignment.RefID > ref) {
 			        std::cerr << "[Finished Counting from " << contig_name << "...]\n";
@@ -679,6 +682,10 @@ class Graph {
 		       		continue;
 				}
 
+				if (alignment.Name == "D00689:146:C9B2EANXX:8:2105:7308:82052#CGCGGA") {
+					std::cerr << "Made it through checks\n";
+				}
+
 				// get alignment start
 				temp_start = alignment.Position;
 
@@ -695,8 +702,13 @@ class Graph {
 				// calculate splice sites
 				curr_node -> calculate_splice(alignment, temp_junct_start, temp_junct_stop);
 
+				if (alignment.Name == "D00689:146:C9B2EANXX:8:2105:7308:82052#CGCGGA") {
+					std::cerr << temp_start << "\t" << temp_stop << "\t"
+							  << temp_junct_start << "\t" << temp_junct_stop << "\n";
+				}
+
 				// check if alignment represents a new node
-				if (temp_start > curr_node -> get_stop()) {
+				if ((temp_start > curr_node -> get_stop()) || (temp_strand != curr_node -> strand)) {
 
 					// Create node
 					Node *new_node = new Node(temp_start, temp_stop, temp_junct_start, temp_junct_stop, temp_strand);
@@ -707,8 +719,18 @@ class Graph {
 					curr_node = new_node;
 					tail = curr_node;
 
+					if (alignment.Name == "D00689:146:C9B2EANXX:8:2105:7308:82052#CGCGGA") {
+						std::cerr << "new node" << "\n";
+					}
+
+
 					continue;
 				
+				}
+
+				if (alignment.Name == "D00689:146:C9B2EANXX:8:2105:7308:82052#CGCGGA") {
+					std::cerr << temp_start << "\t" << temp_stop << "\t"
+							  << temp_junct_start << "\t" << temp_junct_stop << "\n";
 				}
 
 
@@ -740,16 +762,22 @@ class Graph {
 		void print_graph() {
 
 			Node *curr_node = head;
+			Node *next_node = NULL;
 
 			if (head == NULL) {
 				std::cerr << "NULL HEAD\n";
 			}
 
-
 			while (curr_node != NULL) {
 
+				next_node = curr_node -> next;
+
+				if ((next_node != NULL) && (curr_node -> get_stop() > next_node -> get_start())) {
+					std::cerr << "\tCHECK\t" << curr_node -> get_start() << "\n";
+				}
+
 				curr_node -> print_cluster(contig_name, parameters); 
-				curr_node = curr_node -> next;
+				curr_node = next_node;
 
 			}
 
