@@ -656,7 +656,7 @@ class Graph {
 
 				// End of File Reached
 				if (!inFile.GetNextAlignment(alignment)) {
-					std::cerr << "[End of File Reached.]\n";
+					std::cerr << "[End of File Reached...]\n";
 					return 0;
 				}
 
