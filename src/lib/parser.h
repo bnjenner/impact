@@ -4,12 +4,12 @@ using namespace seqan;
 
 /////////////////////////////////////// 
 // Arguments Data Structure
-
 struct ImpactArguments {
 
     std::string alignment_file;    	// sam or bam file
     std::string index_file;    			// index file
     std::string gff_file;      			// gff file
+    int threads;                       // threads
     std::string library_type;           // library type (SE or PE)
     std::string strandedness;           // strandedness
     bool nonunique_alignments;			// count primary and secondary alignments
@@ -32,9 +32,9 @@ struct Parameters {
 
 /////////////////////////////////////// 
 // Argument Parser
-
 ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArguments &args) {
-	// Setup ArgumentParser.
+	
+    // Setup ArgumentParser.
     ArgumentParser parser("impact");
     addDescription(parser, "Generates read counts and identifies peaks in mapped reads from TAGseq experiments.");
 
@@ -46,8 +46,15 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
     addArgument(parser, seqan::ArgParseArgument(
         ArgParseArgument::INPUT_FILE, "GFF"));
 
-    
+
     // Define Options
+      // Threads
+    addOption(parser, ArgParseOption(
+        "t", "threads",
+        "Number of processes for multithreading.",
+        ArgParseArgument::INTEGER, "INT"));
+    setDefaultValue(parser, "threads", "1");
+
       // Library Type
     addOption(parser, seqan::ArgParseOption(
         "l", "library-type", "Library type.",
@@ -104,6 +111,7 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
     							getFileExtension(getArgument(parser, 1))};
     
     
+    // Identify input files types and index
     for (int i = 0; i < 2; i++) {
 
 	    if (file_exts[i] == "bam") {
@@ -125,6 +133,7 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
     
 
 	// Options
+    getOptionValue(args.threads, parser, "threads");
     getOptionValue(args.library_type, parser, "library-type");
     getOptionValue(args.strandedness, parser, "strandedness");
 	args.nonunique_alignments = isSet(parser, "nonunique-alignments");

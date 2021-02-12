@@ -528,17 +528,20 @@ class Graph {
 
 	////////////////////////////
 	// Constructors
-		Graph(int ref_num, std::string ref_name, Parameters &pre_parameters) {
+		Graph() {}
+
+	////////////////////////////
+	// Methods
+
+		// initialize
+		void initialize(int ref_num, std::string ref_name, Parameters &pre_parameters) {
 
 			// Initialize contig number and name
 			ref = ref_num;
 			contig_name = ref_name;
 			parameters = pre_parameters;
+		}		
 
-		}
-
-	////////////////////////////
-	// Methods
 
 		// Set Head
 		int set_head(BamReader &inFile, BamAlignment &alignment) {
@@ -659,7 +662,6 @@ class Graph {
 
 				// If next chromosome is reached, get out of town.
 				if (alignment.RefID > ref) {
-			        std::cerr << "[Finished Counting from " << contig_name << "...]\n";
 					return 0;
 				}
 
@@ -741,7 +743,8 @@ class Graph {
 			Node *next_node = NULL;
 
 			if (head == NULL) {
-				std::cerr << "NULL HEAD\n";
+				//std::cerr << "NULL HEAD\n";
+				return;
 			}
 
 			while (curr_node != NULL) {
@@ -752,9 +755,11 @@ class Graph {
 					((curr_node -> get_stop() > next_node -> get_start()) && 
 					 (curr_node -> strand == next_node -> strand))) {
 					std::cerr << "\tCHECK\t" << curr_node -> get_start() << "\n";
-				}
 
-				curr_node -> print_cluster(contig_name, parameters); 
+				} else {
+					curr_node -> print_cluster(contig_name, parameters); 
+				}
+				
 				curr_node = next_node;
 
 			}

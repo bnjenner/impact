@@ -10,17 +10,19 @@ class AlignmentFile {
 	// Attributes
 
 		BamReader inFile;				// Bam File Object
-		BamAlignment alignment;			// BamAlignmentRecord record;	
+		BamAlignment alignment;			// BamAlignmentRecord record;
+
+		// Data Structure
+		Graph graph;
 
     	// Program options 
-    		std::string file_name;
-	    	std::string index;
-	    	Parameters parameters; 		// parameters struct (found in parser.h)
+    	std::string file_name;
+	    std::string index;
+	    Parameters parameters; 		// parameters struct (found in parser.h)
 
-			RefVector references;
-	    	std::unordered_map<int, std::string> contig_cache;  // Unordered map 
+		RefVector references;
+	    std::unordered_map<int, std::string> contig_cache;  // Unordered map 
    		
-
 
     ////////////////////////////
     // Constructors
@@ -45,7 +47,6 @@ class AlignmentFile {
 
     	///////////////////////
     	// Open files
-
     	void open() {
 
 			if (!inFile.Open(file_name)) {
@@ -82,7 +83,6 @@ class AlignmentFile {
 				contig_cache[i] = references.at(i).RefName;
 
 			}
-	
 
 		}
 
@@ -103,7 +103,7 @@ class AlignmentFile {
 			std::string next_id = "NA";
 
 			// Create Graph object
-			Graph graph(ref, contig_cache[ref], parameters);
+			graph.initialize(ref, contig_cache[ref], parameters);
 
 			// Jump to desired region in bam
 	    	if (!inFile.Jump(ref, jump)) {
@@ -116,16 +116,19 @@ class AlignmentFile {
 				return;
 			}
 
-			//std::cerr << alignment.Name << "\t" << alignment.RefID <<"\n";
-
 			// Create adjency matrix and get number of aligned reads
 			jump = graph.create_clusters(inFile, alignment);
 
+		}
+
+
+		///////////////////////
+		// Print clusters
+		void print_counts() {
+
 			// report counts for read cluster
 			graph.print_graph();
-
-
-		}			
+		}		
 
 
 };
