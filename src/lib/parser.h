@@ -57,9 +57,9 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
 
       // Library Type
     addOption(parser, seqan::ArgParseOption(
-        "l", "library-type", "Library type.",
+        "l", "library-type", "Library type. Paired end is not recommended. Only used to check proper pairing.",
         ArgParseArgument::STRING, "STRING"));
-    setDefaultValue(parser, "library-type", "paired");
+    setDefaultValue(parser, "library-type", "single");
     setValidValues(parser, "library-type", "single paired");
 
       // Strandedness

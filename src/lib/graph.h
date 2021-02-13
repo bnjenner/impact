@@ -466,12 +466,12 @@ class Node {
 
 		////////////////////////////
 		// report cluster and counts
-		void print_cluster(std::string &contig_name, Parameters &parameters) {
+		int print_cluster(std::string &contig_name, Parameters &parameters, int gene_count) {
 		
 			char s;
 
 			if ((clust_vec[0] == -1) || read_count < parameters.min_cov) {
-				return;
+				return 0;
 			}
 
 			// Assign strand
@@ -482,7 +482,7 @@ class Node {
 			}
 
 			// Print name, strand, and first start
-			std::cout << contig_name << "\t" << s << "\t" << clust_vec[0];
+			std::cout << contig_name << "\timpact\tcluster\t" << clust_vec[0];
 
 			// Print rest of starts
 			for (int i = 1; i < clust_count; i++) {
@@ -497,9 +497,11 @@ class Node {
 				std::cout << "," << clust_vec[(i * 2) + 1];
 			}
 
-			// Print counts
-			std::cout << "\t" << read_count << "\n"; 
+			std::cout << "\t.\t" << s << "\t.\tID=impact." 
+					  << contig_name << ":" << gene_count << ".1; "
+					  << "COUNT=" << read_count << "\n";
 
+			return 1;
 		}
 
 };
@@ -550,7 +552,7 @@ class Graph {
 
 				// If no alignments
 				if (!inFile.GetNextAlignment(alignment)){
-					std::cerr << "[ERROR: No Alignment]\n";
+					//std::cerr << "[ERROR: No Alignment]\n";
 					return 0;
 				}
 
@@ -675,6 +677,10 @@ class Graph {
 					continue;
 				}
 
+				if (!alignment.IsProperPair() && (parameters.library_type == 'p')) {
+					continue;
+				}
+
 				// Check if sufficient mapping quality
 				if (alignment.MapQuality <= parameters.mapq) {
 		       		continue;
@@ -739,6 +745,9 @@ class Graph {
 		// print clusters in graph
 		void print_graph() {
 
+			int gene_count = 1;
+			int printed;
+
 			Node *curr_node = head;
 			Node *next_node = NULL;
 
@@ -757,7 +766,13 @@ class Graph {
 					std::cerr << "\tCHECK\t" << curr_node -> get_start() << "\n";
 
 				} else {
-					curr_node -> print_cluster(contig_name, parameters); 
+					
+					printed = curr_node -> print_cluster(contig_name, parameters, gene_count);
+					
+					if (printed == 1) {
+						gene_count ++;
+					}
+					
 				}
 				
 				curr_node = next_node;
