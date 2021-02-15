@@ -528,10 +528,10 @@ class Node {
 				std::cout << contig_name << "\timpact\tsubcluster\t";
 				std::cout << clust_vec[(i * 2)] << "\t" << clust_vec[(i * 2) + 1];
 
-
+				// Print the rest lol
 				std::cout << "\t.\t" << s << "\t.\t"
 						  << "ID=impact." << contig_name << ":" << gene_count << "." << i + i << "; "
-						  << "Parent=" << contig_name << ":" << gene_count << "\n";
+						  << "Parent=impact." << contig_name << ":" << gene_count << "\n";
 
 			}
 
