@@ -530,7 +530,7 @@ class Node {
 
 				// Print the rest lol
 				std::cout << "\t.\t" << s << "\t.\t"
-						  << "ID=impact." << contig_name << ":" << gene_count << "." << i + i << "; "
+						  << "ID=impact." << contig_name << ":" << gene_count << "." << i + 1 << "; "
 						  << "Parent=impact." << contig_name << ":" << gene_count << "\n";
 
 			}
