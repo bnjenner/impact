@@ -644,15 +644,7 @@ class Graph {
 			// Initialize pointers
 			Node *curr_node;
 			tail = head;
-
-			// std::cerr << alignment.Name << "\n";
-			// // If no alignments
-			// if (!inFile.GetNextAlignment(alignment)){
-			// 	std::cerr << "[ERROR: No Alignment]\n";
-			// 	return 0;
-			// }
-
-			// std::cerr << alignment.Name << "\n";
+			
 
 			while (true) {
 
