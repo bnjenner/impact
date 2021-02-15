@@ -6,10 +6,10 @@ using namespace seqan;
 // Arguments Data Structure
 struct ImpactArguments {
 
-    std::string alignment_file;    	// sam or bam file
+    std::string alignment_file;    	    // sam or bam file
     std::string index_file;    			// index file
     std::string gff_file;      			// gff file
-    int threads;                       // threads
+    int threads;                        // threads
     std::string library_type;           // library type (SE or PE)
     std::string strandedness;           // strandedness
     bool nonunique_alignments;			// count primary and secondary alignments
@@ -18,11 +18,11 @@ struct ImpactArguments {
 
 };
 
-// parameters definition for alignment and graph classes
+// parameters definition for alignment and graph classes (maybea a little redundant)
 struct Parameters {
 
-    char library_type;       // library type (p, s)
-    char stranded;           // strandedness of library (f, r)
+    char library_type;              // library type (p, s)
+    char stranded;                  // strandedness of library (f, r)
     bool nonunique_alignments;      // consider secondary alignments 
     int mapq;                       // minimum mapping quality
     int min_cov;                    // min coverage for cluster detection

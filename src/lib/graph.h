@@ -403,7 +403,7 @@ class Node {
 
 					}
 				
-				
+				///////////////
 				// New follows cluster and overlaps
 				} else if ((temp_start > clust_vec[(i * 2)]) && (temp_start < clust_vec[(i * 2) + 1])) {
 
@@ -497,9 +497,11 @@ class Node {
 		////////////////////////////
 		// report cluster and counts
 		int print_cluster(std::string &contig_name, Parameters &parameters, int gene_count) {
-		
+			
+			// strand character
 			char s;
 
+			// If empty or does not meet miniumum coverage
 			if ((clust_vec[0] == -1) || read_count < parameters.min_cov) {
 				return 0;
 			}
@@ -511,25 +513,27 @@ class Node {
 				s = (strand == 1) ? '+' : '-';
 			}
 
-			// Print name, strand, and first start
-			std::cout << contig_name << "\timpact\tcluster\t" << clust_vec[0];
+			// Print "Gene" line, not contiguous
+			std::cout << contig_name << "\timpact\tcluster\t"
+					  << clust_vec[0] << "\t" << clust_vec[(clust_count - 1 * 2) + 1]
+					  << "\t.\t" << s << "\t.\tID=impact." 
+					  << contig_name << ":" << gene_count << "; "
+					  << "Clusters=" << clust_count << "; "
+					  << "Counts=" << read_count << "\n";
 
-			// Print rest of starts
-			for (int i = 1; i < clust_count; i++) {
-				std::cout << "," << clust_vec[(i * 2)];
+			// Iterate through clusters
+			for (int i = 0; i < clust_count; i++) {
+
+				// Print name, strand, and first start
+				std::cout << contig_name << "\timpact\tsubcluster\t";
+				std::cout << clust_vec[(i * 2)] << "\t" << clust_vec[(i * 2) + 1];
+
+
+				std::cout << "\t.\t" << s << "\t.\t"
+						  << "ID=impact." << contig_name << ":" << gene_count << "." << i + i << "; "
+						  << "Parent=" << contig_name << ":" << gene_count << "\n";
+
 			}
-
-			// Print first stop
-			std::cout << "\t" << clust_vec[1];
-
-			// Print rest of stops
-			for (int i = 1; i < clust_count; i++) {
-				std::cout << "," << clust_vec[(i * 2) + 1];
-			}
-
-			std::cout << "\t.\t" << s << "\t.\tID=impact." 
-					  << contig_name << ":" << gene_count << ".1; "
-					  << "COUNT=" << read_count << "\n";
 
 			return 1;
 		}
