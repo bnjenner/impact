@@ -27,8 +27,10 @@ class AlignmentFile {
     ////////////////////////////
     // Constructors
 
+	    // Empty
     	AlignmentFile() {}
 
+    	// Initialized
     	AlignmentFile(const ImpactArguments *args) {
 
     		// Set Attributes
@@ -49,17 +51,20 @@ class AlignmentFile {
     	// Open files
     	void open() {
 
+    		// Open alignment file
 			if (!inFile.Open(file_name)) {
 			    std::cerr << "ERROR: Could not read alignment file: " << file_name << "\n";
 			    throw "ERROR: Could not read alignment file.";
 			}
 			
+			// Open index file
 			if (!inFile.OpenIndex(index)) {
 				std::cerr << "ERROR: Could not read index file: " << index << "\n";
 				throw "ERROR: Could not read index file";
 		    }
 
 
+		    // Get header and check if file is sorted
 			SamHeader head = inFile.GetHeader();
 			if (head.HasSortOrder()) {
 
@@ -75,6 +80,7 @@ class AlignmentFile {
 					throw "ERROR: Could determine sort status.";
 
 			}
+
 
 			// Generate Ref Map (contig indicies)
 			references = inFile.GetReferenceData();

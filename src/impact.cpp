@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 #include <thread>
-#include <future>
 #include <math.h>
 #include <fstream>
 #include <armadillo>
@@ -35,8 +34,11 @@ void count_thread(AlignmentFile *alignment, int ref) {
 // Main 
 int main(int argc, char const ** argv) {
 
+    std::cerr << "[IMPACT]\n";
+
 	auto start = std::chrono::high_resolution_clock::now(); 
 
+    // Parse arguments
 	ImpactArguments args;
 	seqan::ArgumentParser::ParseResult res = argparse(argc, argv, args);
 
@@ -46,8 +48,8 @@ int main(int argc, char const ** argv) {
             return res;
     }
     
-    std::cerr << "[IMPACT]\n";
 
+    // Parse input files
     std::cerr << "[Parsing Input Files...]\n";
     AlignmentFile alignment(&args);
     alignment.open();
@@ -65,52 +67,19 @@ int main(int argc, char const ** argv) {
     //align_thread.join();
     //annotate_thread.join();
 
-    // int i = 0;
-    // while (i < alignment.references.size()) {
-    //     std::cerr << "[Counting from " << alignment.contig_cache[i] << "...]\n";
-    //     alignment.get_counts(i);
-    //     i ++;
-    //     break;
-    // }
 
-    // Close alignment file
-    //alignment.close();
-
-    // int i = 0;
-    // int n = alignment.references.size();
-
-    // while (i < n) {
-
-    //     std::cerr << "[Counting from " << alignment.contig_cache[i] << "...]\n";
-    //     std::thread thread1(count_thread, &args, i);
-
-    //     i++;
-
-    //     // std::cerr << "[Counting from " << alignment.contig_cache[i] << "...]\n";
-    //     // std::thread thread2(count_thread, &args, i);
-
-    //     // i++; 
-
-    //     // std::cerr << "[Counting from " << alignment.contig_cache[i] << "...]\n";
-    //     // std::thread thread3(count_thread, &args, i);
-
-    //     thread1.join();
-    //     // thread2.join();
-    //     // thread3.join();
-
-    //     // i++;
-    // }
-
+    // Number of contigs for subdividing work
     int n = alignment.references.size();
-    std::vector<AlignmentFile*> alignments;
 
     // Create vector of objects for multithreading
+    std::vector<AlignmentFile*> alignments;
     for (int i = 0; i < n; i++) {
         alignments.push_back(new AlignmentFile(&args));
     }
 
 
-    int i = 0;   
+    // initialize thread vector and process numbers
+    int i = 0;
     int proc = args.threads;
     std::vector<std::thread> threads;
 
@@ -122,7 +91,6 @@ int main(int argc, char const ** argv) {
 
         // Add threads to thread vector
         for (int j = 0; j < proc; j++) {
-            //std::cerr << alignments[i + j] -> file_name << "\t" << i + j << "\n";
             threads.push_back(std::thread(count_thread, alignments[i + j], i + j));
         }
 
@@ -135,13 +103,12 @@ int main(int argc, char const ** argv) {
         i += proc;
     }
 
+    
     // Report counts (this is single threaded for order reasons)
-    // Create vector of objects for multithreading
     std::cerr << "[Writing Results to STDOUT...]\n";
     for (int i = 0; i < n; i++) {
         alignments[i] -> print_counts();
     }
-
 
 
    	// The most complicated line of "get the time" I have ever seen. 

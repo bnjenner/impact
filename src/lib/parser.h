@@ -114,16 +114,19 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
     // Identify input files types and index
     for (int i = 0; i < 2; i++) {
 
+        // Assign alignment files
 	    if (file_exts[i] == "bam") {
 
 	    	getArgumentValue(args.alignment_file, parser, i);
 	    	getArgumentValue(args.index_file, parser, i);
             args.index_file = args.index_file + ".bai";
 
+        // Assign annotation files
 	    } else if (file_exts[i] == "gff" || file_exts[i] == "gtf") {
 
 	    	getArgumentValue(args.gff_file, parser, i);	
 
+        // Throw error if unrecognized file type
 	    } else {
 
 	    	std::cerr << "ERROR: Unaccapetd File Format: \"." << file_exts[i] <<  "\". Accepts \".bam\", \".gtf\", or \"gff\" extension.\n";
@@ -132,7 +135,7 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
 	}    
     
 
-	// Options
+	// Populate options
     getOptionValue(args.threads, parser, "threads");
     getOptionValue(args.library_type, parser, "library-type");
     getOptionValue(args.strandedness, parser, "strandedness");
