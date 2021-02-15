@@ -516,8 +516,8 @@ class Node {
 			// Print "Gene" line, not contiguous
 			std::cout << contig_name << "\timpact\tcluster\t"
 					  << clust_vec[0] << "\t" << clust_vec[(clust_count - 1 * 2) + 1]
-					  << "\t.\t" << s << "\t.\tID=impact." 
-					  << contig_name << ":" << gene_count << "; "
+					  << "\t.\t" << s << "\t.\t"
+					  << "ID=impact." << contig_name << "." << gene_count << "; "
 					  << "Clusters=" << clust_count << "; "
 					  << "Counts=" << read_count << "\n";
 
@@ -530,8 +530,8 @@ class Node {
 
 				// Print the rest lol
 				std::cout << "\t.\t" << s << "\t.\t"
-						  << "ID=impact." << contig_name << ":" << gene_count << "." << i + 1 << "; "
-						  << "Parent=impact." << contig_name << ":" << gene_count << "\n";
+						  << "ID=impact." << contig_name << "." << gene_count << "." << i + 1 << "; "
+						  << "Parent=impact." << contig_name << "." << gene_count << "\n";
 
 			}
 
