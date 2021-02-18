@@ -44,7 +44,7 @@ class Node {
 
 			// Temp vars
 			int temp_end = alignment.GetEndPosition() - 1;
-			int temp_junct_start = -1;
+			int temp_junct_start = alignment.Position;
 			int temp_junct_stop = -1;
 
 			// Calculate splice (assumes only one gapped alignment)
@@ -156,7 +156,7 @@ class Node {
 			// if no alignment, remain 
 			if (temp_junct_stop == -1) {
 				temp_junct_start = -1;
-			}
+			} 
 		
 		}
 
@@ -491,13 +491,14 @@ class Node {
 			clust_vec = temp_vec;
 			clust_count = temp_vec.size() / 2;
 
+
 		}
 
 
 		////////////////////////////
 		// report cluster and counts
 		int print_cluster(std::string &contig_name, Parameters &parameters, int gene_count) {
-			
+
 			// strand character
 			char s;
 
@@ -622,6 +623,7 @@ class Graph {
 
 			// Add alignment to head node
 			temp = Node(alignment);
+
 			temp.ishead = 1;
 			head = &temp;
 
@@ -644,7 +646,7 @@ class Graph {
 			// Initialize pointers
 			Node *curr_node;
 			tail = head;
-			
+
 
 			while (true) {
 
@@ -735,6 +737,7 @@ class Graph {
 
 				// calculate splice sites
 				curr_node -> calculate_splice(alignment, temp_junct_start, temp_junct_stop);
+
 
 				// check if alignment represents a new node
 				if ((temp_start > curr_node -> get_stop()) || (temp_strand != curr_node -> strand)) {
