@@ -110,7 +110,6 @@ class AlignmentFile {
 
 			// Create Graph object
 			graph.initialize(ref, contig_cache[ref], parameters);
-			
 
 			// Jump to desired region in bam
 	    	if (!inFile.Jump(ref, jump)) {

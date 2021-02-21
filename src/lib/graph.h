@@ -24,6 +24,7 @@ class Node {
 
 		// Node Variables
 		int ishead = 0;
+		int printed = 0;
 
 
 	////////////////////////////
@@ -180,6 +181,11 @@ class Node {
 				// check if end of read exists within a cluster				
 				} else if ((temp_stop >= clust_vec[i * 2]) && (temp_stop <= clust_vec[(i * 2) + 1])) {
 					return 1;
+
+				// in collape mode 
+				} else if ((temp_start <= clust_vec[i * 2]) && (temp_stop >= clust_vec[(i * 2) + 1])) {
+					return 1;
+
 				}
 
 			}
@@ -256,6 +262,7 @@ class Node {
 
 		////////////////////////////
 		// check how read fits into clusters (this code works, but good god is it ugly)
+		//   I NEED TO MODIFY THIS FUNCTION TO ONLY WORK WITH 1 CHUNK AT A TIME
 		void modify_cluster(int &temp_start, int &temp_end, int &temp_junct_start, int &temp_junct_stop) {
 
 			// Initialize temporary vector by copying current vector (slow)
@@ -475,8 +482,56 @@ class Node {
 
 					}
 
-				}
 
+		//////////////////////////////
+				// Everything after this will be removed in final version, I just don't wanna deal with it rn
+				} else if (i == clust_count - 1) {
+
+					if ((temp_start > clust_vec[(i * 2) + 1]) && (temp_end > clust_vec[(i * 2) + 1])) {
+
+						ins_check = check_insert(temp_start, temp_end);
+
+						if (ins_check != -1) {
+
+							// Inserts new cluster
+							ins_start = temp_start;
+							ins_stop = temp_end;
+							clust_vec = temp_vec;
+						}
+					}
+
+				} else if (temp_junct_start == -1) {
+
+					if ((temp_start < clust_vec[(i * 2)]) && (temp_end < clust_vec[(i * 2)]) && (i == 0)) {
+
+						ins_check = check_insert(temp_start, temp_end);
+
+						if (ins_check != -1) {
+
+							// Inserts new cluster
+							ins_start = temp_start;
+							ins_stop = temp_end;
+							clust_vec = temp_vec;
+						}
+
+					} else if ((temp_start > clust_vec[(i * 2) + 1]) && (temp_end > clust_vec[(i * 2) + 1])
+							    && (temp_end < clust_vec[(i * 2) + 2])) {
+
+						ins_check = check_insert(temp_start, temp_end);
+
+						if (ins_check != -1) {
+
+							// Inserts new cluster
+							ins_start = temp_start;
+							ins_stop = temp_end;
+							clust_vec = temp_vec;
+						}
+					}
+
+				}
+		//////////////////////////////
+
+					
 				// If cluster is deleted, dip out
 				if (clust_del) {
 					break;
@@ -518,9 +573,9 @@ class Node {
 			std::cout << contig_name << "\timpact\tcluster\t"
 					  << clust_vec[0] + 1 << "\t" << clust_vec[((clust_count - 1) * 2) + 1] + 1
 					  << "\t.\t" << s << "\t.\t"
-					  << "ID=impact." << contig_name << "." << gene_count << "; "
-					  << "Clusters=" << clust_count << "; "
-					  << "Counts=" << read_count << "\n";
+					  << "gene_id \"impact." << contig_name << "." << gene_count << "\"; "
+					  << "subclusters \"" << clust_count << "\"; "
+					  << "counts \"" << read_count << "\";\n";
 
 			// Iterate through clusters
 			for (int i = 0; i < clust_count; i++) {
@@ -531,8 +586,8 @@ class Node {
 
 				// Print the rest lol
 				std::cout << "\t.\t" << s << "\t.\t"
-						  << "ID=impact." << contig_name << "." << gene_count << "." << i + 1 << "; "
-						  << "Parent=impact." << contig_name << "." << gene_count << "\n";
+						  << "gene_id \"impact." << contig_name << "." << gene_count << "\"; "
+						  << "subcluster_id \"" << i + 1 << "\";\n";
 
 			}
 
@@ -642,6 +697,8 @@ class Graph {
 			int temp_strand;
 			int temp_junct_start;
 			int temp_junct_stop;
+			std::vector<int> temp_vec = {-1, -1, -1, -1};
+
 
 			// Initialize pointers
 			Node *curr_node;
@@ -652,7 +709,6 @@ class Graph {
 
 				// Start at last node
 				curr_node = tail;
-				
 
 				////////////////////////////////////////////
 				// BLOCK THAT TESTS OVERLAPPING FUNCTION
@@ -755,20 +811,44 @@ class Graph {
 				
 				}
 
+				temp_vec[0] = temp_start;
+
+				if (temp_junct_stop == -1) {
+					temp_vec[1] = temp_junct_start;
+					temp_vec[2] = temp_junct_stop;
+					temp_vec[3] = temp_stop;
+				} else {
+					temp_vec[1] = temp_stop;
+					temp_vec[2] = -1;
+					temp_vec[3] = -1;
+				}
+
+				//std::cerr << "TEST" << "\t" << temp_start << "\n";
+
 				// find overlapping region
 				while ((curr_node != NULL) && (temp_start < curr_node -> get_stop()))  {
 
-					// Check if alignment overlaps with previous nodes
-					if (curr_node -> check_overlap(temp_start, temp_stop, temp_strand)) {
-						curr_node -> modify_cluster(temp_start, temp_stop, temp_junct_start, temp_junct_stop);
-						curr_node -> read_count ++;
+					//std::cerr << curr_node -> get_start() << "\n";
 
-						break;
+					for (int x = 0; x < 4; x++) {
 
-					} else {
-						curr_node = curr_node -> prev;
+						// if end of nongapped alignment
+						if (temp_vec[x] == -1) {
+							break;
 
+						// Check if alignment overlaps with previous nodes
+						} else if (curr_node -> check_overlap(temp_vec[x], temp_vec[x + 1], temp_strand)) {
+
+							curr_node -> modify_cluster(temp_start, temp_stop, temp_junct_start, temp_junct_stop);
+							curr_node -> read_count++;
+
+							// kill the loop
+							temp_start = curr_node -> get_stop() + 1;
+							break;
+						}
 					}
+
+					curr_node = curr_node -> prev;
 
 				}
 
@@ -789,6 +869,7 @@ class Graph {
 			// initialize pointer
 			Node *curr_node = head;
 			Node *next_node = NULL;
+			Node *temp_node = NULL;
 
 
 			// check if head node exists
@@ -801,27 +882,98 @@ class Graph {
 			while (curr_node != NULL) {
 
 				next_node = curr_node -> next;
+				temp_node = curr_node -> next;
 
-				// check if node overlaps with next node
-				//   (never encountered, but would like to collapse when issue arises)
-				if ((next_node != NULL) && 
-					((curr_node -> get_stop() > next_node -> get_start()) && 
-					 (curr_node -> strand == next_node -> strand))) {
+				// throw away variables, function only takes references :( will work on this
+				int t_start;
+				int t_stop;
+				int t_junct = -1;
+				int t_overlap;
+				int t_strand;
 
-					std::cerr << "\tCHECK\t" << curr_node -> get_start() << "\n";
-
-				} else {
+				// if node hasn't already been printed / added to another cluster
+				if (curr_node -> printed == 0) {
 					
+					// check if node overlaps with next node
+					while (true) {
+
+						// checks if curr_node is last node
+						if (temp_node == NULL) {
+							break;
+
+						} else {
+
+							// populate junk vars
+							t_start;
+							t_stop;
+							t_strand = temp_node -> strand;
+							t_overlap = 0;
+
+
+							if (temp_node -> printed == 1) {
+								; // pass, essentially
+
+							// if temp_node is past curr_node region, we can stop looking
+							} else if (temp_node -> get_start() > curr_node -> get_stop()) {
+								break;
+							
+							// if temp_node overlaps with any of the subclusters in curr_node
+							} else {
+
+								// iterate through every subcluster 
+								for (int x = 0; x < temp_node -> clust_count; x++) {
+
+									t_start = temp_node -> clust_vec[(x * 2)];
+									t_stop = temp_node -> clust_vec[(x * 2) + 1];
+
+									if (curr_node -> check_overlap(t_start, t_stop, t_strand) == 1) {
+										t_overlap = 1;
+									}
+
+								}
+
+								// if overlap detected
+								if (t_overlap == 1) {
+
+									// iterate through every subcluster again, and add each
+									for (int x = 0; x < temp_node -> clust_count; x++) {
+
+										t_start = temp_node -> clust_vec[(x * 2)];
+										t_stop = temp_node -> clust_vec[(x * 2) + 1];
+
+										curr_node -> modify_cluster(t_start, t_stop, t_junct, t_junct);
+
+									}
+
+									// total up read counts and mark as printed
+									curr_node -> read_count += temp_node -> read_count;
+									temp_node -> printed = 1;
+
+									// we have to start over because collapsing entries creates new boudnaries to check
+									temp_node = curr_node;
+
+								}
+									
+							}
+
+							// iterate
+							temp_node = temp_node -> next;
+							
+						}	
+
+					}
+
 					// Print cluster (line of GFF file)
 					printed = curr_node -> print_cluster(contig_name, parameters, gene_count);
-					
+					curr_node -> printed = 1;
+
 					// If cluster printed, increment gene number
 					if (printed == 1) {
 						gene_count ++;
 					}
-					
-				}
 				
+				}
+
 				// Iterate
 				curr_node = next_node;
 
