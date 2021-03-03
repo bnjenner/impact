@@ -70,7 +70,7 @@ int main(int argc, char const ** argv) {
 
     // Number of contigs for subdividing work
     int n = alignment.references.size();
-
+    n = 1;
     // Create vector of objects for multithreading
     std::vector<AlignmentFile*> alignments;
     for (int i = 0; i < n; i++) {
