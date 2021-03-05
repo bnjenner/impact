@@ -43,52 +43,20 @@ class Node {
 			// Start position
 			clust_vec[0] = alignment.Position;
 
-			// Temp vars
-			int temp_end = alignment.GetEndPosition() - 1;
-			int temp_junct_start = alignment.Position;
-			int temp_junct_stop = -1;
-
-			// Calculate splice (assumes only one gapped alignment)
-			calculate_splice(alignment, temp_junct_start, temp_junct_stop);
-
-			// populate cluster vector
-			if (temp_junct_start != -1) {
-
-				clust_vec[1] = temp_junct_start;
-				clust_vec.push_back(temp_junct_stop);
-				clust_vec.push_back(temp_end);
-				clust_count ++;
-
-			} else {
-				
-				clust_vec[1] = temp_end;
-			}
+			// Calculate spliced alignments
+			calculate_splice(alignment, clust_vec);
 
 		}
 
 		// Initialized (region properties)
-		Node(int temp_start, int temp_stop, int temp_junct_start, int temp_junct_stop, int temp_strand) {
+		Node(std::vector<int> &temp_vec, int temp_strand) {
 
 			// Get cluster properties
 			strand = temp_strand;
 			read_count = 1;
 
-			// Start position
-			clust_vec[0] = temp_start;
-
-			// populate cluster vector
-			if (temp_junct_start != -1) {
-
-				clust_vec[1] = temp_junct_start;
-				clust_vec.push_back(temp_junct_stop);
-				clust_vec.push_back(temp_stop);
-				clust_count ++;
-
-			} else {
-				
-				clust_vec[1] = temp_stop;
-			}
-
+			// copy vector
+			clust_vec = temp_vec;
 		}
 
 
@@ -136,28 +104,41 @@ class Node {
 
 		////////////////////////////
 		// Calculate splice
-		void calculate_splice(BamAlignment &alignment, int &temp_junct_start, int &temp_junct_stop) {
+		void calculate_splice(BamAlignment &alignment, std::vector<int> &temp_vec) {
+			
+			int pos = 1;
+			int inc = 0;
 
 			// iterate through CIGAR string
 			for (int i = 0; i < alignment.CigarData.size(); i++) {
-
-				// If gap is encounterd, add splice,
+			
+				// If gap is encounterd, add splice, (may also need to check cigar string standards)
 				if (alignment.CigarData[i].Type == 'N') {
-					temp_junct_stop = temp_junct_start + alignment.CigarData[i].Length;
-					break;
+
+					temp_vec[pos] = temp_vec[pos - 1] + inc;
+
+					// expand vector, slow, will improve (maybe)
+					temp_vec.push_back(-1);
+					temp_vec.push_back(-1);
+
+					temp_vec[pos + 1] = temp_vec[pos] + alignment.CigarData[i].Length;
+					
+					pos += 2;
+					inc = 0;
 
 				// If not gapped, add to start position
-				} else if (alignment.CigarData[i].Type == 'M' || alignment.CigarData[i].Type == 'D') {
-					temp_junct_start += alignment.CigarData[i].Length;
+				} else if (alignment.CigarData[i].Type != 'S' && alignment.CigarData[i].Type != 'H') {					
+					inc += alignment.CigarData[i].Length;
+
+				}
+
+				// if end of cigar string is reached
+				if (i == alignment.CigarData.size() - 1) {
+					temp_vec[pos] = temp_vec[pos - 1] + inc - 1;
 
 				}
 			
 			}
-
-			// if no alignment, remain 
-			if (temp_junct_stop == -1) {
-				temp_junct_start = -1;
-			} 
 		
 		}
 
@@ -182,7 +163,7 @@ class Node {
 				} else if ((temp_stop >= clust_vec[i * 2]) && (temp_stop <= clust_vec[(i * 2) + 1])) {
 					return 1;
 
-				// in collape mode 
+				// in read spans cluster 
 				} else if ((temp_start <= clust_vec[i * 2]) && (temp_stop >= clust_vec[(i * 2) + 1])) {
 					return 1;
 
@@ -214,7 +195,7 @@ class Node {
 			for (int j = i + 1; j < clust_count; j++){
 				
 				// Determine if clusters are joined by read
-				if (clust_vec[(j * 2)] < int_stop) {
+				if (clust_vec[(j * 2)] <= int_stop) {
 					factor = j;	
 				
 				} else {
@@ -242,12 +223,13 @@ class Node {
 				return;
 			}
 
-
 			// iterate through all clusters
 			for (int i = 0; i < clust_count; i++) {
 
 				// if read precedes cluster exit
-				if (temp_stop < clust_vec[(i * 2)]) {
+				if (temp_stop < clust_vec[(i * 2)]) { 
+
+					// insert region
 					insert_splice(temp_start, temp_stop);
 					break;
 				
@@ -259,8 +241,6 @@ class Node {
 						insert_splice(temp_start, temp_stop);
 						break;
 					}
-
-					;
 				
 				} else {
 
@@ -276,6 +256,7 @@ class Node {
 						// Updates end of cluster to longest value betweeen end of cluster and end of read
 						clust_vec[(i * 2) + 1] = (clust_vec[(i * 2) + 1] > temp_stop) ? clust_vec[(i * 2) + 1] : temp_stop;
 
+
 					}
 
 					break;
@@ -285,6 +266,19 @@ class Node {
 			}
 						
 			clust_count = clust_vec.size() / 2;
+
+			// I will keep this in for now
+			if (clust_vec.size() % 2 != 0) {
+				std::cerr << "Error, cluster count (" << clust_count % 2 << ") is not even!\n";
+
+
+				for (int x = 0; x < clust_vec.size(); x++) {
+					std::cerr << clust_vec[x] << "\t";
+				}
+				std::cerr << "\n";
+
+				exit(EXIT_FAILURE);
+			}
 		}
 
 		////////////////////////////
@@ -429,14 +423,10 @@ class Graph {
 		int create_clusters(BamReader &inFile, BamAlignment &alignment) {
 
 			// Initialize loop variables
-			int temp_start;
-			int temp_stop;
+			int regions;
+			int temp_start; // used to kill one of loops below
 			int temp_strand;
-			int temp_junct_start;
-			int temp_junct_stop;
-			int overlap;
-			std::vector<int> temp_vec = {-1, -1, -1, -1};
-
+			std::vector<int> temp_vec = {-1, -1};
 
 			// Initialize pointers
 			Node *curr_node;
@@ -447,44 +437,6 @@ class Graph {
 
 				// Start at last node
 				curr_node = tail;
-
-				////////////////////////////////////////////
-				// BLOCK THAT TESTS OVERLAPPING FUNCTION
-
-				// // Interval
-				// clust_count = 3;
-
-				// clust_vec[0] = 10;
-				// clust_vec[1] = 20;
-				// clust_vec.push_back(30);
-				// clust_vec.push_back(40);
-				// clust_vec.push_back(50);
-				// clust_vec.push_back(60);
-
-				// // Test Read
-				// temp_start = 1;
-				// temp_junct_start = 8;
-				// temp_junct_stop = 9;
-				// temp_end = 78;
-
-				// // Print
-				// for (int x = 0; x < clust_vec.size(); x++){
-				// 	std::cerr << clust_vec[x] << "\t"; 
-				// }
-				// std::cerr << "\n";
-				// std::cerr << clust_count << "\n";
-
-				// modify_cluster(temp_start, temp_end, temp_junct_start, temp_junct_stop);
-
-				// for (int x = 0; x < clust_vec.size(); x++){
-				// 	std::cerr << clust_vec[x] << "\t"; 
-				// }
-				// std::cerr << "\n";
-				// std::cerr << clust_count << "\n";
-
-				// break;
-				/////////////////////////////////////////////
-
 
 				// End of File Reached
 				if (!inFile.GetNextAlignment(alignment)) {
@@ -507,37 +459,33 @@ class Graph {
 					continue;
 				}
 
+				// If paired end, check propper pair
 				if (!alignment.IsProperPair() && (parameters.library_type == 'p')) {
 					continue;
 				}
 
 				// Check if sufficient mapping quality
-				if (alignment.MapQuality <= parameters.mapq) {
+				if (alignment.MapQuality < parameters.mapq) {
 		       		continue;
 				}
 
-				// get alignment start
-				temp_start = alignment.Position;
+				// write to temp vector
+				temp_vec = {alignment.Position, -1};
 
-				// get alignment stop
-				temp_stop = alignment.GetEndPosition() - 1;
+				// get alignment start
+				temp_start = temp_vec[0];
 
 				// get strand
 				temp_strand = alignment.IsReverseStrand();
 
-				// reset splice site variables
-				temp_junct_start = alignment.Position;
-				temp_junct_stop = -1;
-
 				// calculate splice sites
-				curr_node -> calculate_splice(alignment, temp_junct_start, temp_junct_stop);
-
+				curr_node -> calculate_splice(alignment, temp_vec);
 
 				// check if alignment represents a new node (past first subcluster)
-				if ((temp_start > curr_node -> clust_vec[1]) || (temp_strand != curr_node -> strand)) {
+				if ((temp_vec[0] > curr_node -> clust_vec[1]) || (temp_strand != curr_node -> strand)) {
 
 					// Create node
-					Node *new_node = new Node(temp_start, temp_stop, temp_junct_start, temp_junct_stop, temp_strand);
+					Node *new_node = new Node(temp_vec, temp_strand);
 
 					// link nodes within graph
 					curr_node -> set_next(new_node);
@@ -549,79 +497,23 @@ class Graph {
 				
 				}
 
-				temp_vec[0] = temp_start;
-
-				if (temp_junct_stop != -1) {
-					temp_vec[1] = temp_junct_start - 1;
-					temp_vec[2] = temp_junct_stop;
-					temp_vec[3] = temp_stop;
-
-				} else {
-					temp_vec[1] = temp_stop;
-					temp_vec[2] = -1;
-					temp_vec[3] = -1;
-				}
-
-				//std::cerr << "TEST" << "\t" << temp_start << "\n";
-
+				// number of aligned regions
+				regions = temp_vec.size() / 2;
+				
 				// find overlapping region
 				while ((curr_node != NULL) && (temp_start < curr_node -> get_stop()))  {
 
-					// std::cerr << curr_node -> get_start() << "\n";
-
-					for (int x = 0; x < 2; x++) {
-
-						// if (temp_start == 55464) {
-
-						// 		std::cerr << "got em\n";		
-						// }
-
-
-						// if end of nongapped alignment
-						if (temp_vec[x] == -1) {
-							break;
+					for (int x = 0; x < regions; x++) {
 
 						// Check if alignment overlaps with previous nodes
-						} else if (curr_node -> check_overlap(temp_vec[(2 * x)], temp_vec[(2 * x) + 1], temp_strand)) {
-
-
-							//std::cerr << "got overlap\n";
+						if (curr_node -> check_overlap(temp_vec[(2 * x)], temp_vec[(2 * x) + 1], temp_strand)) {
 
 							// add all clusters to vector
-							for (int y = 0; y < 2; y++) {
+							for (int y = 0; y < regions; y++) {
 
-								// if (temp_start == 55464) {
-
-								// 	for (int i = 0; i < (curr_node -> clust_count * 2); i++) {
-
-								// 		std::cerr << curr_node -> clust_vec[i] << "\t";
-								// 	}
-								// 	std::cerr << "\n";
-
-								// 	std::cerr << temp_vec[(2 * y)] << "\t" << temp_vec[(2 * y) + 1] << "\n";
-
-								// }
-
-								//curr_node -> modify_cluster(temp_start, temp_stop, temp_junct_start, temp_junct_stop);
 								curr_node -> modify_cluster(temp_vec[(2 * y)], temp_vec[(2 * y) + 1]);
-							
-
-								// if (temp_start == 55464) {
-
-								// 	for (int i = 0; i < (curr_node -> clust_count * 2); i++) {
-
-								// 		std::cerr << curr_node -> clust_vec[i] << "\t";
-								// 	}
-								// 	std::cerr << "\n";
-								// }
 
 							}
-
-							if (temp_start == 55464) {
-
-								exit(EXIT_FAILURE);		
-							}
-
 
 							curr_node -> read_count++;
 
@@ -677,12 +569,6 @@ class Graph {
 
 				// if node hasn't already been printed / added to another cluster
 				if (curr_node -> printed == 0) {
-
-					// // checks if curr_node is last node
-					// if (temp_node == NULL) {
-					// 	break;
-
-					// }
 					
 					// check if node overlaps with next node
 					while (true) {
@@ -771,5 +657,5 @@ class Graph {
 			}
 
 		}
-};
 
+};
