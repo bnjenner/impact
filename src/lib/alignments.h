@@ -123,7 +123,10 @@ class AlignmentFile {
 			}
 
 			// Create adjency matrix and get number of aligned reads
-			jump = graph.create_clusters(inFile, alignment);
+			graph.create_clusters(inFile, alignment);
+
+			// collapse overlapping clusters
+			graph.collapse_graph();
 
 		}
 

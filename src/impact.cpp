@@ -101,7 +101,7 @@ int main(int argc, char const ** argv) {
 
     
     // Report counts (this is single threaded for order reasons)
-    std::cerr << "[Collapsing Clusters...]\n";
+    std::cerr << "[Writing Results...]\n";
     for (int i = 0; i < n; i++) {
         alignments[i] -> print_counts();
     }

@@ -420,7 +420,7 @@ class Graph {
 
 		///////////////////////
 		// Create clusters of overlapping reads
-		int create_clusters(BamReader &inFile, BamAlignment &alignment) {
+		void create_clusters(BamReader &inFile, BamAlignment &alignment) {
 
 			// Initialize loop variables
 			int regions;
@@ -441,12 +441,12 @@ class Graph {
 				// End of File Reached
 				if (!inFile.GetNextAlignment(alignment)) {
 					std::cerr << "[End of File Reached...]\n";
-					return 0;
+					return;
 				}
 
 				// If next chromosome is reached, get out of town.
 				if (alignment.RefID > ref) {
-					return 0;
+					return;
 				}
 
 				// If alignment is a duplicate
@@ -510,9 +510,7 @@ class Graph {
 
 							// add all clusters to vector
 							for (int y = 0; y < regions; y++) {
-
 								curr_node -> modify_cluster(temp_vec[(2 * y)], temp_vec[(2 * y) + 1]);
-
 							}
 
 							curr_node -> read_count++;
@@ -530,17 +528,12 @@ class Graph {
 
 			}
 
-			return 0;
+			return;
 		}
-
 
 		///////////////////////
 		// print clusters in graph
-		void print_graph() {
-
-			// Initialize accumulator and boolean
-			int gene_count = 1;
-			int printed;
+		void collapse_graph() {
 
 			// initialize pointer
 			Node *curr_node = head;
@@ -585,12 +578,8 @@ class Graph {
 							t_strand = temp_node -> strand;
 							t_overlap = 0;
 
-
-							if (temp_node -> printed == 1) {
-								; // pass, essentially
-
 							// if temp_node is past curr_node region, we can stop looking
-							} else if (temp_node -> get_start() > curr_node -> get_stop()) {
+							if (temp_node -> get_start() > curr_node -> get_stop()) {
 								break;
 							
 							// if temp_node overlaps with any of the subclusters in curr_node
@@ -624,21 +613,71 @@ class Graph {
 
 									// total up read counts and mark as printed
 									curr_node -> read_count += temp_node -> read_count;
-									temp_node -> printed = 1;
+
+									// next node needs ptr to node before temp
+									if ((temp_node -> next) != NULL) {
+										(temp_node -> next) -> prev = temp_node -> prev;
+									}
+
+									// prev node needs ptr to node after temp
+									(temp_node -> prev) -> next = temp_node -> next;
+									
+									// if temp is next node, move on
+									if (temp_node == next_node) {
+										next_node = temp_node -> next;
+									}
+
+									// delete node
+									delete temp_node;
 
 									// we have to start over because collapsing entries creates new boudnaries to check
 									temp_node = curr_node;
 
-								}
-									
+								}						
 							}
 
 							// iterate
 							temp_node = temp_node -> next;
 							
 						}	
-
 					}
+				}
+
+				// Iterate
+				curr_node = next_node;
+
+			}
+		}
+
+
+		///////////////////////
+		// print clusters in graph
+		void print_graph() {
+
+			// Initialize accumulator and boolean
+			int gene_count = 1;
+			int printed;
+
+			// initialize pointer
+			Node *curr_node = head;
+			Node *next_node = NULL;
+			Node *temp_node = NULL;
+
+
+			// check if head node exists
+			if (head == NULL) {
+				return;
+			}
+
+
+			// Iterate through nodes
+			while (curr_node != NULL) {
+
+				next_node = curr_node -> next;
+				temp_node = curr_node -> next;
+
+				// if node hasn't already been printed / added to another cluster
+				if (curr_node -> printed == 0) {
 
 					// Print cluster (line of GFF file)
 					printed = curr_node -> print_cluster(contig_name, parameters, gene_count);
