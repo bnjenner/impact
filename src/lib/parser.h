@@ -70,22 +70,22 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
     setValidValues(parser, "strandedness", "forward reverse");
 
       // Nonunique Alignments
-	addOption(parser, seqan::ArgParseOption(
+    addOption(parser, seqan::ArgParseOption(
         "n", "nonunique-alignments", "Count primary and secondary read alignments."));
 
-	  // Min Quality
-	addOption(parser, ArgParseOption(
-	    "q", "mapq-min",
-	    "Minimum mapping quality score to consider for counts.",
-	    ArgParseArgument::INTEGER, "INT"));
-	setDefaultValue(parser, "mapq-min", "1");
+      // Min Quality
+    addOption(parser, ArgParseOption(
+        "q", "mapq-min",
+        "Minimum mapping quality score to consider for counts.",
+        ArgParseArgument::INTEGER, "INT"));
+    setDefaultValue(parser, "mapq-min", "1");
 
-	  // Min coverage for peak 
-	addOption(parser, ArgParseOption(
-	    "m", "min-coverage",
-	    "Minimum coverage for target consideration.",
-	    ArgParseArgument::INTEGER, "INT"));
-	setDefaultValue(parser, "min-coverage", "5");
+      // Min coverage for peak 
+    addOption(parser, ArgParseOption(
+        "m", "min-coverage",
+        "Minimum coverage for target consideration.",
+        ArgParseArgument::INTEGER, "INT"));
+    setDefaultValue(parser, "min-coverage", "5");
 
 
 	// Add Information 
