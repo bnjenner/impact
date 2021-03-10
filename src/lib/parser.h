@@ -88,11 +88,11 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
     setDefaultValue(parser, "min-coverage", "5");
 
 
-	// Add Information 
-	addUsageLine(parser, "input.sorted.bam input.gff [options]");
+    // Add Information 
+    addUsageLine(parser, "input.sorted.bam input.gff [options]");
     setDefaultValue(parser, "version-check", "OFF");
-	hideOption(parser, "version-check");
-	setVersion(parser, "dev0");
+    hideOption(parser, "version-check");
+    setVersion(parser, "dev0");
     setDate(parser, "July 2020");
 
 
@@ -108,39 +108,39 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
     
     // Arguments (deduce file type)
     std::string file_exts[2] = {getFileExtension(getArgument(parser, 0)),
-    							getFileExtension(getArgument(parser, 1))};
+                                getFileExtension(getArgument(parser, 1))};
     
     
     // Identify input files types and index
     for (int i = 0; i < 2; i++) {
 
         // Assign alignment files
-	    if (file_exts[i] == "bam") {
+        if (file_exts[i] == "bam") {
 
-	    	getArgumentValue(args.alignment_file, parser, i);
-	    	getArgumentValue(args.index_file, parser, i);
+            getArgumentValue(args.alignment_file, parser, i);
+            getArgumentValue(args.index_file, parser, i);
             args.index_file = args.index_file + ".bai";
 
         // Assign annotation files
-	    } else if (file_exts[i] == "gff" || file_exts[i] == "gtf") {
+        } else if (file_exts[i] == "gff" || file_exts[i] == "gtf") {
 
-	    	getArgumentValue(args.gff_file, parser, i);	
+            getArgumentValue(args.gff_file, parser, i);	
 
         // Throw error if unrecognized file type
-	    } else {
+        } else {
 
-	    	std::cerr << "ERROR: Unaccapetd File Format: \"." << file_exts[i] <<  "\". Accepts \".bam\", \".gtf\", or \"gff\" extension.\n";
-	    	return ArgumentParser::PARSE_ERROR;
-	    }
-	}    
+            std::cerr << "ERROR: Unaccapetd File Format: \"." << file_exts[i] <<  "\". Accepts \".bam\", \".gtf\", or \"gff\" extension.\n";
+            return ArgumentParser::PARSE_ERROR;
+        }
+    }    
     
 
-	// Populate options
+    // Populate options
     getOptionValue(args.threads, parser, "threads");
     getOptionValue(args.library_type, parser, "library-type");
     getOptionValue(args.strandedness, parser, "strandedness");
-	args.nonunique_alignments = isSet(parser, "nonunique-alignments");
-   	getOptionValue(args.mapq_min, parser, "mapq-min");
+    args.nonunique_alignments = isSet(parser, "nonunique-alignments");
+    getOptionValue(args.mapq_min, parser, "mapq-min");
     getOptionValue(args.min_coverage, parser, "min-coverage");
 
     return seqan::ArgumentParser::PARSE_OK;

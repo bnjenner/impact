@@ -53,8 +53,8 @@ class AlignmentFile {
 
 			// Open alignment file
 			if (!inFile.Open(file_name)) {
-			    std::cerr << "ERROR: Could not read alignment file: " << file_name << "\n";
-			    throw "ERROR: Could not read alignment file.";
+				std::cerr << "ERROR: Could not read alignment file: " << file_name << "\n";
+				throw "ERROR: Could not read alignment file.";
 			}
 			
 			// Open index file
