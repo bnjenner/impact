@@ -117,11 +117,12 @@ class Node {
 
 					temp_vec[pos] = temp_vec[pos - 1] + inc;
 
-					// expand vector, slow, will improve (maybe)
-					temp_vec.push_back(-1);
-					temp_vec.push_back(-1);
+					temp_vec.reserve(temp_vec.size() + 2);
 
-					temp_vec[pos + 1] = temp_vec[pos] + alignment.CigarData[i].Length;
+					// expand vector, slow, will improve (maybe)
+					temp_vec.emplace_back(temp_vec[pos] + alignment.CigarData[i].Length);
+					temp_vec.emplace_back(-1);
+					
 					
 					pos += 2;
 					inc = 0;
@@ -178,8 +179,10 @@ class Node {
 		// insert another spliced region
 		void insert_splice(int int_start, int int_stop) {
 
-			clust_vec.push_back(int_start);
-			clust_vec.push_back(int_stop);
+			clust_vec.reserve(clust_vec.size() + 2);
+
+			clust_vec.emplace_back(int_start);
+			clust_vec.emplace_back(int_stop);
 
 			std::sort(clust_vec.begin(), clust_vec.end());
 
@@ -192,17 +195,14 @@ class Node {
 		    int factor = 0; 
 
 			// Iterate through remaining clusters
-			for (int j = i + 1; j < clust_count; j++){
-				
+			for (int j = i + 1; j < clust_count; j++) {
+
 				// Determine if clusters are joined by read
-				if (clust_vec[(j * 2)] <= int_stop) {
-					factor = j;	
-				
-				} else {
+				if (clust_vec[(j * 2)] > int_stop) {
 					break;
-				
 				}
 
+				factor = j;	
 			} 
 
 			if (factor != 0) {
@@ -211,6 +211,7 @@ class Node {
 				int stop_index = (2 * factor) + 1;
 
 				clust_vec.erase(clust_vec.begin() + start_index + 1, clust_vec.begin() + stop_index);
+			
 			}
 
 		} 
@@ -541,6 +542,14 @@ class Graph {
 			Node *temp_node = NULL;
 
 
+			// throw away variables, function only takes references :( will work on this
+			int t_start;
+			int t_stop;
+			int t_junct = -1;
+			int t_overlap;
+			int t_strand;
+
+
 			// check if head node exists
 			if (head == NULL) {
 				return;
@@ -553,12 +562,7 @@ class Graph {
 				next_node = curr_node -> next;
 				temp_node = curr_node -> next;
 
-				// throw away variables, function only takes references :( will work on this
-				int t_start;
-				int t_stop;
-				int t_junct = -1;
-				int t_overlap;
-				int t_strand;
+				t_junct = -1;
 
 				// if node hasn't already been printed / added to another cluster
 				if (curr_node -> printed == 0) {
@@ -573,8 +577,6 @@ class Graph {
 						} else {
 
 							// populate junk vars
-							t_start;
-							t_stop;
 							t_strand = temp_node -> strand;
 							t_overlap = 0;
 

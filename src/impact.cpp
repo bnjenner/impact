@@ -68,6 +68,7 @@ int main(int argc, char const ** argv) {
 
     // Create vector of objects for multithreading
     std::vector<AlignmentFile*> alignments;
+    alignments.reserve(n);
 
     for (int i = 0; i < n; i++) {
         alignments.emplace_back(new AlignmentFile(&args));
@@ -84,10 +85,11 @@ int main(int argc, char const ** argv) {
     while (i < n) {
 
         proc = std::min(proc, n - i);
+        threads.reserve(proc);
 
         // Add threads to thread vector
         for (int j = 0; j < proc; j++) {
-            threads.push_back(std::thread(count_thread, std::ref(alignments[i + j]), i + j));
+            threads.emplace_back(std::thread(count_thread, std::ref(alignments[i + j]), i + j));
         }
 
         // Join threads
