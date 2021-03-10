@@ -9,8 +9,6 @@
 #include "api/BamReader.h" 
 #include "api/BamAux.h"
 #include "lib/parser.h"
-#include "lib/utils.h"
-#include "lib/peaks.h"
 #include "lib/graph.h"
 //#include "lib/annotations.h"
 #include "lib/alignments.h"
@@ -77,7 +75,7 @@ int main(int argc, char const ** argv) {
 
     // initialize thread vector and process numbers
     int i = 0;
-    int proc = args.threads;
+    int proc = args.threads - 1;
     std::vector<std::thread> threads;
 
     // Multithreaded processing of alignments
