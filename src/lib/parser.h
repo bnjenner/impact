@@ -39,7 +39,7 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
     addDescription(parser, "Generates read counts and identifies peaks in mapped reads from TAGseq experiments.");
 
 
-	// Define Arguments
+    // Define Arguments
     addArgument(parser, seqan::ArgParseArgument(
         ArgParseArgument::INPUT_FILE, "BAM"));
 

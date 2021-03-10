@@ -15,43 +15,43 @@ class AlignmentFile {
 		// Data Structure
 		Graph graph;
 
-    	// Program options 
-    	std::string file_name;
-	    std::string index;
-	    Parameters parameters; 		// parameters struct (found in parser.h)
+		// Program options 
+		std::string file_name;
+		std::string index;
+		Parameters parameters; 		// parameters struct (found in parser.h)
 
 		RefVector references;
-	    std::unordered_map<int, std::string> contig_cache;  // Unordered map 
-   		
+		std::unordered_map<int, std::string> contig_cache;  // Unordered map 
 
-    ////////////////////////////
-    // Constructors
 
-	    // Empty
-    	AlignmentFile() {}
+	////////////////////////////
+	// Constructors
 
-    	// Initialized
-    	AlignmentFile(const ImpactArguments *args) {
+		// Empty
+		AlignmentFile() {}
 
-    		// Set Attributes
-    		file_name = args -> alignment_file;
-    		index = args -> index_file;
-    		parameters.library_type = ((args -> library_type) == "paired") ? 'p' : 's';
-    		parameters.stranded = ((args -> strandedness) == "forward") ? 'f' : 'r'; 
-    		parameters.nonunique_alignments = args -> nonunique_alignments;
-    		parameters.mapq = args -> mapq_min - 1;
-    		parameters.min_cov = args -> min_coverage - 1;
+		// Initialized
+		AlignmentFile(const ImpactArguments *args) {
 
-    	}
+			// Set Attributes
+			file_name = args -> alignment_file;
+			index = args -> index_file;
+			parameters.library_type = ((args -> library_type) == "paired") ? 'p' : 's';
+			parameters.stranded = ((args -> strandedness) == "forward") ? 'f' : 'r'; 
+			parameters.nonunique_alignments = args -> nonunique_alignments;
+			parameters.mapq = args -> mapq_min - 1;
+			parameters.min_cov = args -> min_coverage - 1;
 
-    ////////////////////////////
-    // Methods
+		}
 
-    	///////////////////////
-    	// Open files
-    	void open() {
+	////////////////////////////
+	// Methods
 
-    		// Open alignment file
+		///////////////////////
+		// Open files
+		void open() {
+
+			// Open alignment file
 			if (!inFile.Open(file_name)) {
 			    std::cerr << "ERROR: Could not read alignment file: " << file_name << "\n";
 			    throw "ERROR: Could not read alignment file.";
@@ -61,10 +61,10 @@ class AlignmentFile {
 			if (!inFile.OpenIndex(index)) {
 				std::cerr << "ERROR: Could not read index file: " << index << "\n";
 				throw "ERROR: Could not read index file";
-		    }
+			}
 
 
-		    // Get header and check if file is sorted
+			// Get header and check if file is sorted
 			SamHeader head = inFile.GetHeader();
 			if (head.HasSortOrder()) {
 
@@ -105,17 +105,17 @@ class AlignmentFile {
 		void get_counts(int ref) {
 
 			// Variable accounting for group cut off and name of first read in group 
-		    int jump = 0;
+			int jump = 0;
 			std::string next_id = "NA";
 
 			// Create Graph object
 			graph.initialize(ref, contig_cache[ref], parameters);
 
 			// Jump to desired region in bam
-	    	if (!inFile.Jump(ref, jump)) {
-	    		std::cerr << "[ERROR: Could not jump to region: " << ref << ":" << jump << ".]\n";
-	    		return;
-	    	}
+			if (!inFile.Jump(ref, jump)) {
+				std::cerr << "[ERROR: Could not jump to region: " << ref << ":" << jump << ".]\n";
+				return;
+			}
 
 			// Set head of graph
 			if (!graph.set_head(inFile, alignment)) {

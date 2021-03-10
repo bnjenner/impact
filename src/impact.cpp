@@ -36,18 +36,18 @@ int main(int argc, char const ** argv) {
 
     std::cerr << "[IMPACT]\n";
 
-	auto start = std::chrono::high_resolution_clock::now(); 
+    auto start = std::chrono::high_resolution_clock::now(); 
 
     // Parse arguments
-	ImpactArguments args;
-	seqan::ArgumentParser::ParseResult res = argparse(argc, argv, args);
+    ImpactArguments args;
+    seqan::ArgumentParser::ParseResult res = argparse(argc, argv, args);
 
 
-	// Return Error if Parsing Error
+    // Return Error if Parsing Error
     if (res != seqan::ArgumentParser::PARSE_OK) {
             return res;
     }
-    
+
 
     // Parse input files
     std::cerr << "[Parsing Input Files...]\n";
@@ -101,7 +101,7 @@ int main(int argc, char const ** argv) {
         i += proc;
     }
 
-    
+
     // Report counts (this is single threaded for order reasons)
     std::cerr << "[Writing Results...]\n";
     for (int i = 0; i < n; i++) {
@@ -109,9 +109,9 @@ int main(int argc, char const ** argv) {
     }
 
 
-   	// The most complicated line of "get the time" I have ever seen. 
-   	auto stop = std::chrono::high_resolution_clock::now(); 
-   	auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start); 
+	// The most complicated line of "get the time" I have ever seen. 
+    auto stop = std::chrono::high_resolution_clock::now(); 
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start); 
 
     std::cerr << "[Program Complete!]\n";
     std::cerr << "[Runtime: " << duration.count() << " seconds]\n";  
