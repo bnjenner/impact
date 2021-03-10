@@ -4,13 +4,14 @@
 #include <vector>
 #include <thread>
 #include <math.h>
-#include <fstream>
+#include <condition_variable>
+#include <mutex>
 #include <armadillo>
 #include "api/BamReader.h" 
 #include "api/BamAux.h"
 #include "lib/parser.h"
 #include "lib/graph.h"
-//#include "lib/annotations.h"
+#include "lib/queue.h"
 #include "lib/alignments.h"
 
 // Threads
@@ -21,6 +22,11 @@
 // void open_annotation(AnnotationFile *annotation) {
 //     annotation -> open();
 // }
+
+// Mutex and Conditinoal vars
+std::mutex main_mut;
+std::condition_variable main_cv;
+bool MAIN_THREAD = false; // found in queue.h
 
 void count_thread(AlignmentFile *alignment, int ref) {
     alignment -> open();
@@ -72,32 +78,56 @@ int main(int argc, char const ** argv) {
         alignments.emplace_back(new AlignmentFile(&args));
     }
 
+    ////////////////////////////////////////
+    // TO DO
 
-    // initialize thread vector and process numbers
+    // - fix thread calling get_counts
+    // - add mutex lock for writing to stderr
+
+    ////////////////////////////////////////
+
+    // initialize increment and process number
     int i = 0;
-    int proc = args.threads - 1;
-    std::vector<std::thread> threads;
+    int proc = std::max(args.threads - 1, 1);
 
-    // Multithreaded processing of alignments
+    // establish scope for queue, once it leaves scope, it will call 
+    //  destructor which joins the remaining threads and modifies 
+    //  MAIN_THREAD var and allows main thread to continue
     std::cerr << "[Processing Alignments...]\n";
-    while (i < n) {
+    {
 
-        proc = std::min(proc, n - i);
-        threads.reserve(proc);
+        // initialize dispatch queue with n threads
+        thread_queue call_queue(proc); 
+        do {
 
-        // Add threads to thread vector
-        for (int j = 0; j < proc; j++) {
-            threads.emplace_back(std::thread(count_thread, std::ref(alignments[i + j]), i + j));
-        }
+            // populate dispatch queue with necessary jobs
+            while (i < n) {
 
-        // Join threads
-        for (auto &th : threads) {
-            th.join();
-        }
+                // enqueue counting job
+                call_queue.dispatch([&]{count_thread(alignments[i], i);});
+                i++;
 
-        threads.clear();
-        i += proc;
+                std::cerr << "enqueued\n";
+        
+            }
+
+            sleep(1);
+
+            std::cerr << call_queue.call_queue.size()<< "\n";
+
+         // Wait for queue to be emptied
+        } while (!call_queue.finished());
+    
+        std::cerr << "loop exit " << call_queue.call_queue.size() << "\n";
     }
+
+
+    // lock main thread
+    std::unique_lock<std::mutex> main_lock(main_mut);
+    // wait for thread_queue destructor to let us go
+    main_cv.wait(main_lock, []{return MAIN_THREAD;});
+    // unlock thread
+    main_lock.unlock();
 
 
     // Report counts (this is single threaded for order reasons)
@@ -111,6 +141,8 @@ int main(int argc, char const ** argv) {
     auto stop = std::chrono::high_resolution_clock::now(); 
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start); 
 
+
+    // Say goodbye :)
     std::cerr << "[Program Complete!]\n";
     std::cerr << "[Runtime: " << duration.count() << " seconds]\n";  
 
