@@ -1,13 +1,13 @@
 #include <iostream>
-#include <chrono> 
+#include <chrono>
 #include <string>
 #include <vector>
 #include <thread>
 #include <math.h>
 #include <condition_variable>
 #include <mutex>
-#include <armadillo>
-#include "api/BamReader.h" 
+//#include <armadillo>
+#include "api/BamReader.h"
 #include "api/BamAux.h"
 #include "lib/parser.h"
 #include "lib/graph.h"

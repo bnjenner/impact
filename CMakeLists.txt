@@ -8,7 +8,7 @@ project (impact CXX)
 
 # Dependencies
 find_package(ZLIB REQUIRED)
-find_package(Armadillo REQUIRED 9.800.4)
+#find_package(Armadillo REQUIRED 9.800.4)
 find_package(Threads REQUIRED)
 
 # Statically link program and depedencies
