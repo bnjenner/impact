@@ -29,7 +29,7 @@ class AlignmentFile {
 	// Constructors
 
 		// Empty
-		AlignmentFile() {}
+		AlignmentFile() {};
 
 		// Initialized
 		AlignmentFile(const ImpactArguments *args, int ref) {
@@ -66,6 +66,19 @@ class AlignmentFile {
 				throw "ERROR: Could not read index file";
 			}
 
+		}
+
+
+		///////////////////////
+		// Close files
+		void close() {
+			inFile.Close();
+		}
+
+
+		///////////////////////
+		// parse input file for contig order and jump position
+		void get_order() {
 
 			// Get header and check if file is sorted
 			SamHeader head = inFile.GetHeader();
@@ -97,9 +110,9 @@ class AlignmentFile {
 
 
 		///////////////////////
-		// Close files
-		void close() {
-			inFile.Close();
+		// copy contig cache for name and position in file
+		void copy_order(const std::unordered_map<int, std::string> &init_contig_cache) {
+			contig_cache = init_contig_cache;
 		}
 
 
@@ -107,9 +120,7 @@ class AlignmentFile {
 		// Grab Alignments within Interval Using Bam Index
 		void get_counts() {
 
-			// Variable accounting for group cut off and name of first read in group 
 			int jump = 0;
-			std::string next_id = "NA";
 
 			// Create Graph object
 			graph.initialize(chr_num, contig_cache[chr_num], parameters);
@@ -125,7 +136,7 @@ class AlignmentFile {
 				return;
 			}
 
-			// Create adjency matrix and get number of aligned reads
+			// Create clusters of reads (overlap them)
 			graph.create_clusters(inFile, alignment);
 
 			// collapse overlapping clusters

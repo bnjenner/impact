@@ -4,8 +4,12 @@
 
 // Special thanks to https://github.com/embeddedartistry/embedded-resources/blob/master/examples/cpp/dispatch.cpp 
 //	for the code inspiration :)
+
 extern bool MAIN_THREAD;
 
+
+//////////////////////////////////////
+// Thread safe dispatch queue
 class thread_queue {
 
 	typedef std::function<void(void)> call;

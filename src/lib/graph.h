@@ -272,7 +272,7 @@ class Node {
 
 		////////////////////////////
 		// report cluster and counts
-		int print_cluster(std::string &contig_name, Parameters &parameters, int gene_count) {
+		int print_cluster(const std::string &contig_name, const Parameters &parameters, int gene_count) {
 
 			// strand character
 			char s;
@@ -350,7 +350,7 @@ class Graph {
 
 		///////////////////////
 		// Initialize empty object
-		void initialize(int ref_num, std::string ref_name, Parameters &pre_parameters) {
+		void initialize(int ref_num, std::string ref_name, const Parameters &pre_parameters) {
 
 			// Initialize contig number and name
 			ref = ref_num;

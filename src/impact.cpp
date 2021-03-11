@@ -41,13 +41,14 @@ int main(int argc, char const ** argv) {
 
     // Parse input files
     std::cerr << "[Parsing Input Files...]\n";
-    AlignmentFile alignment(&args, 0);
-    alignment.open();
-    alignment.close(); 
+    AlignmentFile init_alignment(&args, 0);
+    init_alignment.open();
+    init_alignment.get_order();
+    init_alignment.close(); 
 
 
     // Number of contigs for subdividing work
-    int n = alignment.references.size();
+    int n = init_alignment.references.size();
 
     // Create vector of objects for multithreading
     std::vector<AlignmentFile*> alignments;
@@ -55,6 +56,7 @@ int main(int argc, char const ** argv) {
 
     for (int i = 0; i < n; i++) {
         alignments.emplace_back(new AlignmentFile(&args, i));
+        alignments[i] -> copy_order(init_alignment.contig_cache);
     }
 
     ////////////////////////////////////////
