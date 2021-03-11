@@ -268,18 +268,6 @@ class Node {
 						
 			clust_count = clust_vec.size() / 2;
 
-			// I will keep this in for now
-			if (clust_vec.size() % 2 != 0) {
-				std::cerr << "Error, cluster count (" << clust_count % 2 << ") is not even!\n";
-
-
-				for (int x = 0; x < clust_vec.size(); x++) {
-					std::cerr << clust_vec[x] << "\t";
-				}
-				std::cerr << "\n";
-
-				exit(EXIT_FAILURE);
-			}
 		}
 
 		////////////////////////////
@@ -441,7 +429,7 @@ class Graph {
 
 				// End of File Reached
 				if (!inFile.GetNextAlignment(alignment)) {
-					std::cerr << "[End of File Reached...]\n";
+					std::cerr << "[End of File Reached!]\n";
 					return;
 				}
 
@@ -536,19 +524,19 @@ class Graph {
 		// print clusters in graph
 		void collapse_graph() {
 
-			// initialize pointer
+			// initialize pointer (I used a lot don't judge me)
 			Node *curr_node = head;
 			Node *next_node = NULL;
 			Node *temp_node = NULL;
+			Node *inter_node = NULL;
 
 
 			// throw away variables, function only takes references :( will work on this
 			int t_start;
 			int t_stop;
-			int t_junct = -1;
-			int t_overlap;
 			int t_strand;
-
+			int t_overlap;
+			int t_restart;
 
 			// check if head node exists
 			if (head == NULL) {
@@ -562,17 +550,25 @@ class Graph {
 				next_node = curr_node -> next;
 				temp_node = curr_node -> next;
 
-				t_junct = -1;
+				t_restart = 0;
 
 				// if node hasn't already been printed / added to another cluster
 				if (curr_node -> printed == 0) {
 					
-					// check if node overlaps with next node
+
 					while (true) {
 
-						// checks if curr_node is last node
-						if (temp_node == NULL) {
-							break;
+						// checks if curr_node is last node or beyond range
+						if ((temp_node == NULL) || 
+							(temp_node -> get_start() > curr_node -> get_stop())) {
+
+							if (t_restart == 0) {
+								break;
+							}
+
+							t_restart = 0;
+							temp_node = curr_node;
+
 
 						} else {
 
@@ -580,68 +576,62 @@ class Graph {
 							t_strand = temp_node -> strand;
 							t_overlap = 0;
 
-							// if temp_node is past curr_node region, we can stop looking
-							if (temp_node -> get_start() > curr_node -> get_stop()) {
-								break;
-							
-							// if temp_node overlaps with any of the subclusters in curr_node
-							} else {
+							// iterate through every subcluster 
+							for (int x = 0; x < temp_node -> clust_count; x++) {
 
-								// iterate through every subcluster 
+								t_start = temp_node -> clust_vec[(x * 2)];
+								t_stop = temp_node -> clust_vec[(x * 2) + 1];
+
+								if (curr_node -> check_overlap(t_start, t_stop, t_strand) == 1) {
+									t_overlap = 1;
+									break;
+								}
+							
+							}
+
+							// if overlap detected
+							if (t_overlap == 1) {
+
+								t_restart = 1;
+
+								// iterate through every subcluster again, and add each
 								for (int x = 0; x < temp_node -> clust_count; x++) {
 
 									t_start = temp_node -> clust_vec[(x * 2)];
 									t_stop = temp_node -> clust_vec[(x * 2) + 1];
 
-									if (curr_node -> check_overlap(t_start, t_stop, t_strand) == 1) {
-										t_overlap = 1;
-										break;
-									}
+									curr_node -> modify_cluster(t_start, t_stop);
 
 								}
 
-								// if overlap detected
-								if (t_overlap == 1) {
+								// total up read counts and mark as printed
+								curr_node -> read_count += temp_node -> read_count;
 
-									// iterate through every subcluster again, and add each
-									for (int x = 0; x < temp_node -> clust_count; x++) {
+								// next node needs ptr to node before temp
+								if ((temp_node -> next) != NULL) {
+									(temp_node -> next) -> set_prev(temp_node -> prev);
+								} 
 
-										t_start = temp_node -> clust_vec[(x * 2)];
-										t_stop = temp_node -> clust_vec[(x * 2) + 1];
+								// prev node needs ptr to node after temp
+								(temp_node -> prev) -> set_next(temp_node -> next);	
+								inter_node = temp_node -> prev;
+								
+								// if temp is next node, move on
+								if (temp_node == next_node) {
+									next_node = temp_node -> next;
+								}
 
-										curr_node -> modify_cluster(t_start, t_stop);
+								// delete node
+								delete temp_node;
 
-									}
+								// start onto next non-deleted node
+								temp_node = inter_node;
 
-									// total up read counts and mark as printed
-									curr_node -> read_count += temp_node -> read_count;
+							}						
+						}
 
-									// next node needs ptr to node before temp
-									if ((temp_node -> next) != NULL) {
-										(temp_node -> next) -> prev = temp_node -> prev;
-									}
-
-									// prev node needs ptr to node after temp
-									(temp_node -> prev) -> next = temp_node -> next;
-									
-									// if temp is next node, move on
-									if (temp_node == next_node) {
-										next_node = temp_node -> next;
-									}
-
-									// delete node
-									delete temp_node;
-
-									// we have to start over because collapsing entries creates new boudnaries to check
-									temp_node = curr_node;
-
-								}						
-							}
-
-							// iterate
-							temp_node = temp_node -> next;
-							
-						}	
+						// iterate
+						temp_node = temp_node -> next;	
 					}
 				}
 

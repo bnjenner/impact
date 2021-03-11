@@ -63,7 +63,7 @@ class thread_queue {
 
 		////////////////////////////
 		// dispatch (basically enqueue)
-		void dispatch(const call &job) {
+		void dispatch(const call &&job) {
 	
 			// create lock
 			std::unique_lock<std::mutex> lock(mlock);
@@ -100,15 +100,8 @@ class thread_queue {
 					//unlock now that we're done messing with the queue
 					lock.unlock();
 
-					////////////////////////////////////////
-
-					// HERE IS THE ERROR, SOMETHING WITH HOW IT IS CALLED IDK
 					// call job
-					//job();
-
-					///////////////////////////////////////
-
-					std::cerr << "calling\n";
+					job();
 
 					// lock 
 					lock.lock();

@@ -20,6 +20,7 @@ class AlignmentFile {
 		std::string index;
 		Parameters parameters; 		// parameters struct (found in parser.h)
 
+		int chr_num;
 		RefVector references;
 		std::unordered_map<int, std::string> contig_cache;  // Unordered map 
 
@@ -31,7 +32,7 @@ class AlignmentFile {
 		AlignmentFile() {}
 
 		// Initialized
-		AlignmentFile(const ImpactArguments *args) {
+		AlignmentFile(const ImpactArguments *args, int ref) {
 
 			// Set Attributes
 			file_name = args -> alignment_file;
@@ -42,6 +43,7 @@ class AlignmentFile {
 			parameters.mapq = args -> mapq_min - 1;
 			parameters.min_cov = args -> min_coverage - 1;
 
+			chr_num = ref;
 		}
 
 	////////////////////////////
@@ -57,6 +59,7 @@ class AlignmentFile {
 				throw "ERROR: Could not read alignment file.";
 			}
 			
+
 			// Open index file
 			if (!inFile.OpenIndex(index)) {
 				std::cerr << "ERROR: Could not read index file: " << index << "\n";
@@ -102,18 +105,18 @@ class AlignmentFile {
 
 		///////////////////////
 		// Grab Alignments within Interval Using Bam Index
-		void get_counts(int ref) {
+		void get_counts() {
 
 			// Variable accounting for group cut off and name of first read in group 
 			int jump = 0;
 			std::string next_id = "NA";
 
 			// Create Graph object
-			graph.initialize(ref, contig_cache[ref], parameters);
+			graph.initialize(chr_num, contig_cache[chr_num], parameters);
 
 			// Jump to desired region in bam
-			if (!inFile.Jump(ref, jump)) {
-				std::cerr << "[ERROR: Could not jump to region: " << ref << ":" << jump << ".]\n";
+			if (!inFile.Jump(chr_num, jump)) {
+				std::cerr << "[ERROR: Could not jump to region: " << chr_num << ":" << jump << ".]\n";
 				return;
 			}
 
@@ -137,6 +140,17 @@ class AlignmentFile {
 
 			// report counts for read cluster
 			graph.print_graph();
+		}
+
+
+		///////////////////////
+		// Close files
+		void launch() {
+
+			this -> open();
+			this -> get_counts();
+			this -> close();
+		
 		}		
 
 

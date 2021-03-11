@@ -11,8 +11,8 @@
 #include "api/BamAux.h"
 #include "lib/parser.h"
 #include "lib/graph.h"
-#include "lib/queue.h"
 #include "lib/alignments.h"
+#include "lib/queue.h"
 
 // Threads
 // void open_alignment(AlignmentFile *alignment) {
@@ -28,12 +28,11 @@ std::mutex main_mut;
 std::condition_variable main_cv;
 bool MAIN_THREAD = false; // found in queue.h
 
-void count_thread(AlignmentFile *alignment, int ref) {
-    alignment -> open();
-    alignment -> get_counts(ref);
-    alignment -> close();
-}
-
+// void count_thread(AlignmentFile *alignment, int ref) {
+//     alignment -> open();
+//     alignment -> get_counts(ref);
+//     alignment -> close();
+// }
 
 // Main 
 int main(int argc, char const ** argv) {
@@ -55,7 +54,7 @@ int main(int argc, char const ** argv) {
 
     // Parse input files
     std::cerr << "[Parsing Input Files...]\n";
-    AlignmentFile alignment(&args);
+    AlignmentFile alignment(&args, 0);
     alignment.open();
     alignment.close(); 
 
@@ -75,7 +74,7 @@ int main(int argc, char const ** argv) {
     alignments.reserve(n);
 
     for (int i = 0; i < n; i++) {
-        alignments.emplace_back(new AlignmentFile(&args));
+        alignments.emplace_back(new AlignmentFile(&args, i));
     }
 
     ////////////////////////////////////////
@@ -103,24 +102,18 @@ int main(int argc, char const ** argv) {
             // populate dispatch queue with necessary jobs
             while (i < n) {
 
-                // enqueue counting job
-                call_queue.dispatch([&]{count_thread(alignments[i], i);});
+                // dispatch job
+                call_queue.dispatch([&, i]{alignments[i] -> launch();});
                 i++;
-
-                std::cerr << "enqueued\n";
         
             }
-
-            sleep(1);
-
-            std::cerr << call_queue.call_queue.size()<< "\n";
 
          // Wait for queue to be emptied
         } while (!call_queue.finished());
     
-        std::cerr << "loop exit " << call_queue.call_queue.size() << "\n";
     }
 
+    std::cerr << "[Processing Complete...]\n";
 
     // lock main thread
     std::unique_lock<std::mutex> main_lock(main_mut);
