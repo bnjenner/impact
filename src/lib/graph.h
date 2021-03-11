@@ -16,6 +16,7 @@ class Node {
 		// Clusters
 		//    (heap allocation, minimizing can improve performance)
 		std::vector<int> clust_vec{-1, -1}; // array of cluster start and stops (evens are starts, odds are ends)
+
 		int clust_count = 1;
 
 		// Links

@@ -8,7 +8,7 @@ struct ImpactArguments {
 
     std::string alignment_file;    	    // sam or bam file
     std::string index_file;    			// index file
-    std::string gff_file;      			// gff file
+    // std::string gff_file;      			// gff file
     int threads;                        // threads
     std::string library_type;           // library type (SE or PE)
     std::string strandedness;           // strandedness
@@ -36,15 +36,16 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
 	
     // Setup ArgumentParser.
     ArgumentParser parser("impact");
-    addDescription(parser, "Generates read counts and identifies peaks in mapped reads from TAGseq experiments.");
+    addDescription(parser, 
+                   "Identifies expressed transcripts using clusters of mapped reads from TAGseq experiments. Generates a GTF file written to stdout.");
 
 
     // Define Arguments
     addArgument(parser, seqan::ArgParseArgument(
         ArgParseArgument::INPUT_FILE, "BAM"));
 
-    addArgument(parser, seqan::ArgParseArgument(
-        ArgParseArgument::INPUT_FILE, "GFF"));
+    // addArgument(parser, seqan::ArgParseArgument(
+    //     ArgParseArgument::INPUT_FILE, "GFF"));
 
 
     // Define Options
@@ -89,7 +90,7 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
 
 
     // Add Information 
-    addUsageLine(parser, "input.sorted.bam input.gff [options]");
+    addUsageLine(parser, "input.sorted.bam [options]");
     setDefaultValue(parser, "version-check", "OFF");
     hideOption(parser, "version-check");
     setVersion(parser, "dev0");
@@ -105,34 +106,44 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
         return ArgumentParser::PARSE_ERROR;
     }
 
+    // // Arguments (deduce file type)
+    // std::string file_exts[2] = {getFileExtension(getArgument(parser, 0)),
+    //                             getFileExtension(getArgument(parser, 1))};
     
-    // Arguments (deduce file type)
-    std::string file_exts[2] = {getFileExtension(getArgument(parser, 0)),
-                                getFileExtension(getArgument(parser, 1))};
     
-    
-    // Identify input files types and index
-    for (int i = 0; i < 2; i++) {
+    // // Identify input files types and index
+    // for (int i = 0; i < 2; i++) {
 
-        // Assign alignment files
-        if (file_exts[i] == "bam") {
+    //     // Assign alignment files
+    //     if (file_exts[i] == "bam") {
 
-            getArgumentValue(args.alignment_file, parser, i);
-            getArgumentValue(args.index_file, parser, i);
-            args.index_file = args.index_file + ".bai";
+    //         getArgumentValue(args.alignment_file, parser, i);
+    //         getArgumentValue(args.index_file, parser, i);
+    //         args.index_file = args.index_file + ".bai";
 
-        // Assign annotation files
-        } else if (file_exts[i] == "gff" || file_exts[i] == "gtf") {
+    //     // Assign annotation files
+    //     } else if (file_exts[i] == "gff" || file_exts[i] == "gtf") {
 
-            getArgumentValue(args.gff_file, parser, i);	
+    //         getArgumentValue(args.gff_file, parser, i);	
 
-        // Throw error if unrecognized file type
-        } else {
+    //     // Throw error if unrecognized file type
+    //     } else {
 
-            std::cerr << "ERROR: Unaccapetd File Format: \"." << file_exts[i] <<  "\". Accepts \".bam\", \".gtf\", or \"gff\" extension.\n";
-            return ArgumentParser::PARSE_ERROR;
-        }
-    }    
+    //         std::cerr << "ERROR: Unaccapetd File Format: \"." << file_exts[i] <<  "\". Accepts \".bam\", \".gtf\", or \"gff\" extension.\n";
+    //         return ArgumentParser::PARSE_ERROR;
+    //     }
+    // }    
+
+    std::string input_file_ext = getFileExtension(getArgument(parser, 0));
+
+    if (input_file_ext != "bam") {
+        std::cerr << "ERROR: Unaccapetd File Format: \"." << input_file_ext <<  "\". Only accepts \".bam\",  extension.\n";
+        return ArgumentParser::PARSE_ERROR;
+    }
+
+    getArgumentValue(args.alignment_file, parser, 0);
+    getArgumentValue(args.index_file, parser, 0);
+    args.index_file = args.index_file + ".bai";
     
 
     // Populate options
@@ -144,4 +155,5 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
     getOptionValue(args.min_coverage, parser, "min-coverage");
 
     return seqan::ArgumentParser::PARSE_OK;
+
 }
