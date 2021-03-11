@@ -14,25 +14,12 @@
 #include "lib/alignments.h"
 #include "lib/queue.h"
 
-// Threads
-// void open_alignment(AlignmentFile *alignment) {
-//     alignment -> open();
-// }
-
-// void open_annotation(AnnotationFile *annotation) {
-//     annotation -> open();
-// }
 
 // Mutex and Conditinoal vars
 std::mutex main_mut;
 std::condition_variable main_cv;
 bool MAIN_THREAD = false; // found in queue.h
 
-// void count_thread(AlignmentFile *alignment, int ref) {
-//     alignment -> open();
-//     alignment -> get_counts(ref);
-//     alignment -> close();
-// }
 
 // Main 
 int main(int argc, char const ** argv) {
@@ -58,13 +45,6 @@ int main(int argc, char const ** argv) {
     alignment.open();
     alignment.close(); 
 
-    // Construct annotation object in thread
-    // AnnotationFile annotation(&args);
-    // std::thread annotate_thread(open_annotation, &annotation);
-
-    // join threads
-    //annotate_thread.join();
-
 
     // Number of contigs for subdividing work
     int n = alignment.references.size();
@@ -80,7 +60,6 @@ int main(int argc, char const ** argv) {
     ////////////////////////////////////////
     // TO DO
 
-    // - fix thread calling get_counts
     // - add mutex lock for writing to stderr
 
     ////////////////////////////////////////
@@ -113,8 +92,6 @@ int main(int argc, char const ** argv) {
     
     }
 
-    std::cerr << "[Processing Complete...]\n";
-
     // lock main thread
     std::unique_lock<std::mutex> main_lock(main_mut);
     // wait for thread_queue destructor to let us go
@@ -122,6 +99,7 @@ int main(int argc, char const ** argv) {
     // unlock thread
     main_lock.unlock();
 
+    std::cerr << "[Processing Complete!]\n";
 
     // Report counts (this is single threaded for order reasons)
     std::cerr << "[Writing Results...]\n";
