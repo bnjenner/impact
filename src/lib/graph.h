@@ -391,7 +391,7 @@ class Graph {
 				} 
 	
 				// Check if sufficient mapping quality
-				if (alignment.MapQuality <= parameters.mapq) {
+				if (alignment.MapQuality < parameters.mapq) {
 		       		continue;
 				}
 

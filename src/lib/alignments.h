@@ -40,8 +40,8 @@ class AlignmentFile {
 			parameters.library_type = ((args -> library_type) == "paired") ? 'p' : 's';
 			parameters.stranded = ((args -> strandedness) == "forward") ? 'f' : 'r'; 
 			parameters.nonunique_alignments = args -> nonunique_alignments;
-			parameters.mapq = args -> mapq_min - 1;
-			parameters.min_cov = args -> min_coverage - 1;
+			parameters.mapq = args -> mapq_min;
+			parameters.min_cov = args -> min_coverage;
 
 			chr_num = ref;
 		}
