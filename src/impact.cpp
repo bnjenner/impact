@@ -94,14 +94,15 @@ int main(int argc, char const ** argv) {
     
     }
 
+
     // lock main thread
     std::unique_lock<std::mutex> main_lock(main_mut);
     // wait for thread_queue destructor to let us go
     main_cv.wait(main_lock, []{return MAIN_THREAD;});
     // unlock thread
     main_lock.unlock();
-
     std::cerr << "[Processing Complete!]\n";
+
 
     // Report counts (this is single threaded for order reasons)
     std::cerr << "[Writing Results...]\n";
