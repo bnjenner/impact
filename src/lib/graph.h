@@ -11,13 +11,12 @@ class Node {
 
 		// Cluster variables
 		int strand = -1;
-		int read_count = 1;
+		int read_count = -1;
+		int clust_count = -1;
 
 		// Clusters
 		//    (heap allocation, minimizing can improve performance)
 		std::vector<int> clust_vec{-1, -1}; // array of cluster start and stops (evens are starts, odds are ends)
-
-		int clust_count = 1;
 
 		// Links
 		Node *next = NULL;
@@ -46,6 +45,7 @@ class Node {
 
 			// Calculate spliced alignments
 			calculate_splice(alignment, clust_vec);
+			clust_count = clust_vec.size() / 2;
 
 		}
 
@@ -58,6 +58,7 @@ class Node {
 
 			// copy vector
 			clust_vec = temp_vec;
+			clust_count = clust_vec.size() / 2;
 		}
 
 
