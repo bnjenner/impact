@@ -100,8 +100,7 @@ int main(int argc, char const ** argv) {
     // wait for thread_queue destructor to let us go
     main_cv.wait(main_lock, []{return MAIN_THREAD;});
     // unlock thread
-    main_lock.unlock();
-    
+    main_lock.unlock(); 
     std::cerr << "[Processing Complete!]\n";
 
 
