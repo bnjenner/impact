@@ -101,6 +101,7 @@ int main(int argc, char const ** argv) {
     main_cv.wait(main_lock, []{return MAIN_THREAD;});
     // unlock thread
     main_lock.unlock();
+    
     std::cerr << "[Processing Complete!]\n";
 
 
