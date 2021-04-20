@@ -18,6 +18,8 @@ class Node {
 		//    (heap allocation, minimizing can improve performance)
 		std::vector<int> clust_vec{-1, -1}; // array of cluster start and stops (evens are starts, odds are ends)
 
+		std::vector<int> count_vec{-1}; // array of cluster start and stops (evens are starts, odds are ends)
+
 		// Links
 		Node *next = NULL;
 		Node *prev = NULL;
@@ -47,6 +49,12 @@ class Node {
 			calculate_splice(alignment, clust_vec);
 			clust_count = clust_vec.size() / 2;
 
+			count_vec[0] = 1;
+			// if splice, add read
+			for (int i = 1; i < clust_count; i++) {
+				count_vec.push_back(1);
+			}
+
 		}
 
 		// Initialized (region properties)
@@ -59,6 +67,12 @@ class Node {
 			// copy vector
 			clust_vec = temp_vec;
 			clust_count = clust_vec.size() / 2;
+
+			count_vec[0] = 1;
+			// if splice add read
+			for (int i = 1; i < clust_count; i++) {
+				count_vec.push_back(1);
+			}
 		}
 
 
@@ -71,11 +85,12 @@ class Node {
 
 			// Cluster variables
 			strand = -1;
-			read_count = 1;
+			read_count = -1;
 
 			// Clusters
 			clust_vec = {-1, -1}; // array of cluster start and stops (evens are starts, odds are ends)
-			clust_count = 1;
+			count_vec = {-1};
+			clust_count = -1;
 		}
 
 
@@ -179,8 +194,12 @@ class Node {
 
 		////////////////////////////
 		// insert another spliced region
-		void insert_splice(int int_start, int int_stop) {
+		void insert_splice(int int_start, int int_stop, int new_pos, int new_val) {
 
+			std::vector<int> just_a_copy = clust_vec;
+			std::vector<int> just_a_copy_1 = count_vec;
+
+			// insert new start and stop
 			clust_vec.reserve(clust_vec.size() + 2);
 
 			clust_vec.emplace_back(int_start);
@@ -188,13 +207,18 @@ class Node {
 
 			std::sort(clust_vec.begin(), clust_vec.end());
 
+			// insert new position in count vector (probably not ideal)
+			std::vector<int>::iterator it;
+			it = count_vec.begin() + new_pos;
+			it = count_vec.insert(it, new_val);
+
 		}
 
 		////////////////////////////
 		// Delete spliced region
-		void delete_splice(int i, int int_stop) { 
+		void delete_splice(int i, int int_stop, int int_start) { 
 
-		    int factor = 0; 
+		    int close_stop = 0;
 
 			// Iterate through remaining clusters
 			for (int j = i + 1; j < clust_count; j++) {
@@ -204,23 +228,43 @@ class Node {
 					break;
 				}
 
-				factor = j;	
+				close_stop = j;	
 			} 
 
-			if (factor != 0) {
+			if (close_stop != 0 && close_stop != i) {
 
 				int start_index = (i * 2);
-				int stop_index = (2 * factor) + 1;
+				int stop_index = (2 * close_stop) + 1;
 
 				clust_vec.erase(clust_vec.begin() + start_index + 1, clust_vec.begin() + stop_index);
-			
-			}
 
+				// new sum
+				int new_sum = 0;
+				int offset = -1;
+
+				// create temp vector
+				std::vector<int> temp_count_vec(clust_vec.size() / 2, -1);
+
+				// populate values
+				for (int x = 0; x < count_vec.size(); x++) {
+
+					if (x < i || x > close_stop) {
+						temp_count_vec[x - std::max(offset, 0)] = count_vec[x];
+					} else {
+						new_sum += count_vec[x];
+						offset++;
+					}
+				
+				}
+
+				temp_count_vec[i] = new_sum;
+				count_vec = temp_count_vec;
+			}
 		} 
 
 		////////////////////////////
 		// check how read fits into clusters
-		void modify_cluster(int &temp_start, int &temp_stop) {
+		void modify_cluster(int &temp_start, int &temp_stop, int temp_count) {
 
 			if (temp_start == -1) {
 				return;
@@ -233,7 +277,7 @@ class Node {
 				if (temp_stop < clust_vec[(i * 2)]) { 
 
 					// insert region
-					insert_splice(temp_start, temp_stop);
+					insert_splice(temp_start, temp_stop, i, temp_count);
 					break;
 				
 				// if read follows cluster, go to next cluster
@@ -241,7 +285,7 @@ class Node {
 
 					// if last cluster add
 					if (i == clust_count - 1) {
-						insert_splice(temp_start, temp_stop);
+						insert_splice(temp_start, temp_stop, i + 1, temp_count);
 						break;
 					}
 				
@@ -253,21 +297,24 @@ class Node {
 					// if end of read is greater than first chunk
 					if (temp_stop > clust_vec[(i * 2) + 1]) {
 
-						// Checks if clusters are joined by read
-						delete_splice(i, temp_stop);
+						// if not last read cluster
+						if (i != clust_count - 1) {
+
+							// Checks if clusters are joined by read
+							delete_splice(i, temp_stop, temp_start);
+						}
 
 						// Updates end of cluster to longest value betweeen end of cluster and end of read
 						clust_vec[(i * 2) + 1] = (clust_vec[(i * 2) + 1] > temp_stop) ? clust_vec[(i * 2) + 1] : temp_stop;
-
-
 					}
 
+					count_vec[i] += temp_count;
 					break;
 
 				}
 
 			}
-						
+
 			clust_count = clust_vec.size() / 2;
 
 		}
@@ -309,7 +356,8 @@ class Node {
 				// Print the rest lol
 				std::cout << "\t.\t" << s << "\t.\t"
 						  << "gene_id \"impact." << contig_name << "." << gene_count << "\"; "
-						  << "subcluster_id \"" << i + 1 << "\";\n";
+						  << "subcluster_id \"" << i + 1 << "\"; " 
+						  << "counts \"" << count_vec[i] <<"\";\n";
 
 			}
 
@@ -501,7 +549,7 @@ class Graph {
 
 							// add all clusters to vector
 							for (int y = 0; y < regions; y++) {
-								curr_node -> modify_cluster(temp_vec[(2 * y)], temp_vec[(2 * y) + 1]);
+								curr_node -> modify_cluster(temp_vec[(2 * y)], temp_vec[(2 * y) + 1], 1);
 							}
 
 							curr_node -> read_count++;
@@ -602,7 +650,7 @@ class Graph {
 									t_start = temp_node -> clust_vec[(x * 2)];
 									t_stop = temp_node -> clust_vec[(x * 2) + 1];
 
-									curr_node -> modify_cluster(t_start, t_stop);
+									curr_node -> modify_cluster(t_start, t_stop, temp_node -> count_vec[x]);
 
 								}
 
