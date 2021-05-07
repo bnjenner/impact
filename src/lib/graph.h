@@ -216,7 +216,7 @@ class Node {
 
 		////////////////////////////
 		// Delete spliced region
-		void delete_splice(int i, int int_stop, int int_start) { 
+		void delete_splice(int i, int int_start, int int_stop) { 
 
 		    int close_stop = 0;
 
@@ -266,6 +266,7 @@ class Node {
 		// check how read fits into clusters
 		void modify_cluster(int &temp_start, int &temp_stop, int temp_count) {
 
+
 			if (temp_start == -1) {
 				return;
 			}
@@ -294,14 +295,14 @@ class Node {
 					// Updates beginning of cluster to longest value betweeen end of cluster and end of read
 					clust_vec[(i * 2)] = (clust_vec[(i * 2)] < temp_start) ? clust_vec[(i * 2)] : temp_start;
 							
-					// if end of read is greater than first chunk
+					// if end of read extends past than first chunk
 					if (temp_stop > clust_vec[(i * 2) + 1]) {
 
 						// if not last read cluster
 						if (i != clust_count - 1) {
 
 							// Checks if clusters are joined by read
-							delete_splice(i, temp_stop, temp_start);
+							delete_splice(i, temp_start, temp_stop);
 						}
 
 						// Updates end of cluster to longest value betweeen end of cluster and end of read
@@ -538,7 +539,7 @@ class Graph {
 
 				// number of aligned regions
 				regions = temp_vec.size() / 2;
-				
+
 				// find overlapping region
 				while ((curr_node != NULL) && (temp_start < curr_node -> get_stop()))  {
 
