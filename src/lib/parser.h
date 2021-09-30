@@ -6,27 +6,40 @@ using namespace seqan;
 // Arguments Data Structure
 struct ImpactArguments {
 
+    // Files
     std::string alignment_file;    	    // sam or bam file
-    std::string index_file;    			// index file
-    // std::string gff_file;      			// gff file
+    std::string index_file;    			// index filed
+    std::string annotation_file;      	// gff or gtf file
+
+    // Program
     int threads;                        // threads
     std::string library_type;           // library type (SE or PE)
     std::string strandedness;           // strandedness
+    
+    // Alignments
     bool nonunique_alignments;			// count primary and secondary alignments
     int mapq_min;						// minimum mapq score
-    int min_coverage;					// min coverage
+    //int min_coverage;					// min coverage
+
+    // Features
+    std::string feature_tag;            // name of feature tag
 
 };
 
 // parameters definition for alignment and graph classes (maybea a little redundant)
 struct Parameters {
 
+    // Program
     char library_type;              // library type (p, s)
     char stranded;                  // strandedness of library (f, r)
+    
+    // Alignments
     bool nonunique_alignments;      // consider secondary alignments 
     int mapq;                       // minimum mapping quality
-    int min_cov;                    // min coverage for cluster detection
+    //int min_cov;                    // min coverage for cluster detection
 
+    // Features
+    std::string feature_tag;        // name of feature tag
 };
 
 
@@ -44,8 +57,8 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
     addArgument(parser, seqan::ArgParseArgument(
         ArgParseArgument::INPUT_FILE, "BAM"));
 
-    // addArgument(parser, seqan::ArgParseArgument(
-    //     ArgParseArgument::INPUT_FILE, "GFF"));
+    addArgument(parser, seqan::ArgParseArgument(
+        ArgParseArgument::INPUT_FILE, "GTF"));
 
 
     // Define Options
@@ -82,15 +95,21 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
     setDefaultValue(parser, "mapq-min", "1");
 
       // Min coverage for peak 
-    addOption(parser, ArgParseOption(
-        "m", "min-coverage",
-        "Minimum coverage for target consideration.",
-        ArgParseArgument::INTEGER, "INT"));
-    setDefaultValue(parser, "min-coverage", "5");
+    // addOption(parser, ArgParseOption(
+    //     "m", "min-coverage",
+    //     "Minimum coverage for target consideration.",
+    //     ArgParseArgument::INTEGER, "INT"));
+    // setDefaultValue(parser, "min-coverage", "10");
+
+      // Feature Tag
+    addOption(parser, seqan::ArgParseOption(
+        "f", "feature-tag", "Name of feature tag.",
+        ArgParseArgument::STRING, "STRING"));
+    setDefaultValue(parser, "feature-tag", "exon");
 
 
     // Add Information 
-    addUsageLine(parser, "input.sorted.bam [options]");
+    addUsageLine(parser, "input.sorted.bam annotation.gtf [options]");
     setDefaultValue(parser, "version-check", "OFF");
     hideOption(parser, "version-check");
     setVersion(parser, "dev0");
@@ -105,54 +124,36 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
     if (res != ArgumentParser::PARSE_OK) {
         return ArgumentParser::PARSE_ERROR;
     }
-
-    // // Arguments (deduce file type)
-    // std::string file_exts[2] = {getFileExtension(getArgument(parser, 0)),
-    //                             getFileExtension(getArgument(parser, 1))};
-    
-    
-    // // Identify input files types and index
-    // for (int i = 0; i < 2; i++) {
-
-    //     // Assign alignment files
-    //     if (file_exts[i] == "bam") {
-
-    //         getArgumentValue(args.alignment_file, parser, i);
-    //         getArgumentValue(args.index_file, parser, i);
-    //         args.index_file = args.index_file + ".bai";
-
-    //     // Assign annotation files
-    //     } else if (file_exts[i] == "gff" || file_exts[i] == "gtf") {
-
-    //         getArgumentValue(args.gff_file, parser, i);	
-
-    //     // Throw error if unrecognized file type
-    //     } else {
-
-    //         std::cerr << "ERROR: Unaccapetd File Format: \"." << file_exts[i] <<  "\". Accepts \".bam\", \".gtf\", or \"gff\" extension.\n";
-    //         return ArgumentParser::PARSE_ERROR;
-    //     }
-    // }    
-
+   
+   // Check file type of first positional arg
     std::string input_file_ext = getFileExtension(getArgument(parser, 0));
-
     if (input_file_ext != "bam") {
         std::cerr << "ERROR: Unaccapetd File Format: \"." << input_file_ext <<  "\". Only accepts \".bam\",  extension.\n";
         return ArgumentParser::PARSE_ERROR;
     }
 
+    // Check file type of second positional arg
+    input_file_ext = getFileExtension(getArgument(parser, 1));
+    if (input_file_ext != "gtf") {
+        std::cerr << "ERROR: Unaccapetd File Format: \"." << input_file_ext <<  "\". Only accepts \".gtf\",  extension.\n";
+        return ArgumentParser::PARSE_ERROR;
+    }
+
+
+    // Get arguments
     getArgumentValue(args.alignment_file, parser, 0);
+    getArgumentValue(args.annotation_file, parser, 1);
     getArgumentValue(args.index_file, parser, 0);
     args.index_file = args.index_file + ".bai";
     
-
     // Populate options
     getOptionValue(args.threads, parser, "threads");
     getOptionValue(args.library_type, parser, "library-type");
     getOptionValue(args.strandedness, parser, "strandedness");
     args.nonunique_alignments = isSet(parser, "nonunique-alignments");
     getOptionValue(args.mapq_min, parser, "mapq-min");
-    getOptionValue(args.min_coverage, parser, "min-coverage");
+    //getOptionValue(args.min_coverage, parser, "min-coverage");
+    getOptionValue(args.feature_tag, parser, "feature-tag");
 
     return seqan::ArgumentParser::PARSE_OK;
 

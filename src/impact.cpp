@@ -6,11 +6,13 @@
 #include <math.h>
 #include <condition_variable>
 #include <mutex>
-//#include <armadillo>
 #include "api/BamReader.h"
 #include "api/BamAux.h"
 #include "lib/parser.h"
+#include "lib/model.h"
+#include "lib/node.h"
 #include "lib/graph.h"
+#include "lib/annotation.h"
 #include "lib/alignments.h"
 #include "lib/queue.h"
 
@@ -25,9 +27,9 @@ bool MAIN_THREAD = false; // found in queue.h
 int main(int argc, char const ** argv) {
 
     std::cerr << "[IMPACT]\n";
-
     auto start = std::chrono::high_resolution_clock::now(); 
 
+    ////////////////////////////
     // Parse arguments
     ImpactArguments args;
     seqan::ArgumentParser::ParseResult res = argparse(argc, argv, args);
@@ -38,14 +40,22 @@ int main(int argc, char const ** argv) {
             return res;
     }
 
-
     // Parse input files
     std::cerr << "[Parsing Input Files...]\n";
+
+    std::cerr << "[...Annotation File...]\n";
+    AnnotationFile init_annotation(&args);
+    init_annotation.create_gene_graph();
+
+    std::cerr << "[...Alignment File...]\n";
     AlignmentFile init_alignment(&args, 0);
     init_alignment.open();
     init_alignment.get_order();
-    init_alignment.close(); 
+    init_alignment.close();
 
+
+    ////////////////////////////
+    // Generate clusters
 
     // Number of contigs for subdividing work
     int n = init_alignment.references.size();
@@ -57,6 +67,7 @@ int main(int argc, char const ** argv) {
     for (int i = 0; i < n; i++) {
         alignments.emplace_back(new AlignmentFile(&args, i));
         alignments[i] -> copy_order(init_alignment.contig_cache);
+        alignments[i] -> copy_annotation(init_annotation, i);
     }
 
     ////////////////////////////////////////
@@ -73,7 +84,7 @@ int main(int argc, char const ** argv) {
     // establish scope for queue, once it leaves scope, it will call 
     //  destructor which joins the remaining threads and modifies 
     //  MAIN_THREAD var and allows main thread to continue
-    std::cerr << "[Processing Alignments...]\n";
+    std::cerr << "[Finding Clusters...]\n";
     {
 
         // initialize dispatch queue with n threads
@@ -101,15 +112,55 @@ int main(int argc, char const ** argv) {
     main_cv.wait(main_lock, []{return MAIN_THREAD;});
     // unlock thread
     main_lock.unlock(); 
-    std::cerr << "[Processing Complete!]\n";
+    //std::cerr << "[Processing Complete!]\n";
 
+
+    // // Start modeling
+    // std::cerr << "[Modeling Peak Width...]\n";
+    // // Create model for width
+    // Model model;
+
+    // for (int i = 0; i < n; i++) {
+    //     if (alignments[i] -> model_cluster_width() > 0) {
+    //         model.tot_width += alignments[i] -> model_cluster_width(); 
+    //         model.tot_exp += alignments[i] -> model_cluster_exp(); 
+    //         model.n += 1;
+    //     }
+    // }
+
+    // model.width = model.tot_width / model.n;
+    // model.exp = model.tot_exp / model.n;
+
+    
+    ////////////////////////////
+    // Writing results
+
+    int total_ambiguous = 0;
+    int total_multimapping = 0;
+    int total_no_feature = 0;
+    int total_low_quality = 0;
+    int total_unique = 0;
+    int total_reads = 0;
 
     // Report counts (this is single threaded for order reasons)
     std::cerr << "[Writing Results...]\n";
     for (int i = 0; i < n; i++) {
-        alignments[i] -> print_counts();
+        //alignments[i] -> refine_clusters(model.width);
+        alignments[i] -> print_genes();
+        total_ambiguous += alignments[i] -> ambiguous_reads; 
+        total_unique += alignments[i] -> unique_reads; 
+        total_multimapping += alignments[i] -> multimapped_reads;
+        total_no_feature += alignments[i] -> unassigned_reads;
+        total_reads += alignments[i] -> total_reads;
+        //alignments[i] -> print_counts();
+        
     }
 
+    std::cout << "__unique\t" << total_unique << "\n";
+    std::cout << "__ambiguous\t" << total_ambiguous << "\n";
+    std::cout << "__multimapping\t" << total_multimapping << "\n";
+    std::cout << "__unassigned\t" << total_no_feature << "\n";
+    std::cout << "__total\t" << total_reads << "\n";
 
 	// The most complicated line of "get the time" I have ever seen. 
     auto stop = std::chrono::high_resolution_clock::now(); 
