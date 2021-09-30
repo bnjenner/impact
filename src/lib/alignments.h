@@ -39,6 +39,8 @@ class AlignmentFile {
 		int multimapped_reads = 0;
 		int unassigned_reads = 0;
 
+		int sub_total = 0;
+
 	////////////////////////////
 	// Constructors
 
@@ -412,7 +414,7 @@ class AlignmentFile {
 								// Check reverse
 								temp_gene = curr_gene -> prev;
 								
-								// temp isn't NULL and cluster isn't alread ambiguous
+								// temp isn't NULL and cluster isn't already ambiguous
 								if ((temp_gene != NULL) && (curr_clust -> ambiguous != 1)) {
 
 									// iterate through clusters if not alread ambigous
@@ -421,8 +423,8 @@ class AlignmentFile {
 										for (int x = 1; x < temp_gene -> clust_count; x++) {
 
 											overlap = curr_clust -> check_ambiguous(temp_gene -> clust_vec[(2 * x)], 
-																				  temp_gene -> clust_vec[(2 * x) + 1],
-																				  temp_gene -> strand);
+																				    temp_gene -> clust_vec[(2 * x) + 1],
+																				    temp_gene -> strand);
 
 											if (overlap == 1) {
 												curr_clust -> ambiguous = 1;
@@ -446,12 +448,12 @@ class AlignmentFile {
 								// 			  << curr_clust	-> ambiguous << "\n";
 								// }
 
+								assigned = true;
+
 								// if not ambigous, assign reads to gene
 								if (curr_clust -> ambiguous == 0) {
-
 									curr_gene -> read_count += curr_clust -> read_count;
 									unique_reads += curr_clust -> read_count;
-									assigned = true;
 								} else {
 									ambiguous_reads += curr_clust -> read_count;
 								}

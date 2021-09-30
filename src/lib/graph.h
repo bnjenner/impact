@@ -87,6 +87,11 @@ class Alignmnet_Graph {
 					continue;
 				} 
 	
+				// If paired end, check propper pair
+				if (!alignment.IsProperPair() && (parameters.library_type == 'p')) {
+					continue;
+				}
+
 				// Check if sufficient mapping quality
 				if (alignment.MapQuality < parameters.mapq) {
 		       		continue;
@@ -120,6 +125,8 @@ class Alignmnet_Graph {
 			Node *curr_node;
 			tail = head;
 
+			// We have a head
+			int sub_total = 1;
 
 			while (true) {
 
@@ -128,12 +135,12 @@ class Alignmnet_Graph {
 
 				// End of File Reached
 				if (!inFile.GetNextAlignment(alignment)) {
-					return;
+					break;
 				}
 
 				// If next chromosome is reached, get out of town.
 				if (alignment.RefID > ref) {
-					return;
+					break;
 				}
 
 				total_reads ++;
@@ -160,7 +167,6 @@ class Alignmnet_Graph {
 					continue;
 				}
 
-
 				// If paired end, check propper pair
 				if (!alignment.IsProperPair() && (parameters.library_type == 'p')) {
 					continue;
@@ -170,6 +176,8 @@ class Alignmnet_Graph {
 				if (alignment.MapQuality < parameters.mapq) {
 		       		continue;
 				}
+
+				sub_total += 1;
 
 				// write to temp vector
 				temp_vec = {alignment.Position, -1};
@@ -182,6 +190,9 @@ class Alignmnet_Graph {
 
 				// calculate splice sites
 				curr_node -> calculate_splice(alignment, temp_vec);
+
+				// number of aligned regions
+				regions = temp_vec.size() / 2;
 
 				// check if alignment represents a new node (past first subcluster)
 				if ((temp_vec[0] > curr_node -> clust_vec[1]) || (temp_strand != curr_node -> strand)) {
@@ -203,7 +214,7 @@ class Alignmnet_Graph {
 				regions = temp_vec.size() / 2;
 
 				// find overlapping region
-				while ((curr_node != NULL) && (temp_start < curr_node -> get_stop()))  {
+				while ((curr_node != NULL) && (temp_start != -1))  {
 
 					for (int x = 0; x < regions; x++) {
 
@@ -216,9 +227,9 @@ class Alignmnet_Graph {
 							}
 
 							curr_node -> read_count++;
-
+							
 							// kill the loop
-							temp_start = curr_node -> get_stop() + 1;
+							temp_start = -1;
 							break;
 						}
 					
@@ -250,7 +261,6 @@ class Alignmnet_Graph {
 			int t_strand;
 			int t_overlap;
 			int t_restart;
-
 
 			// Iterate through nodes
 			while (curr_node != NULL) {

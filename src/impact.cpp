@@ -84,7 +84,7 @@ int main(int argc, char const ** argv) {
     // establish scope for queue, once it leaves scope, it will call 
     //  destructor which joins the remaining threads and modifies 
     //  MAIN_THREAD var and allows main thread to continue
-    std::cerr << "[Finding Clusters...]\n";
+    std::cerr << "[Processing Data...]\n";
     {
 
         // initialize dispatch queue with n threads
@@ -142,6 +142,7 @@ int main(int argc, char const ** argv) {
     int total_unique = 0;
     int total_reads = 0;
 
+
     // Report counts (this is single threaded for order reasons)
     std::cerr << "[Writing Results...]\n";
     for (int i = 0; i < n; i++) {
@@ -155,7 +156,7 @@ int main(int argc, char const ** argv) {
         //alignments[i] -> print_counts();
         
     }
-
+    
     std::cout << "__unique\t" << total_unique << "\n";
     std::cout << "__ambiguous\t" << total_ambiguous << "\n";
     std::cout << "__multimapping\t" << total_multimapping << "\n";
