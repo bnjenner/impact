@@ -11,6 +11,7 @@ class AnnotationFile {
 
 		// Useful global variables 
 		std::string feature_tag;
+		std::string feature_id;
 		std::string annotation_file_name;
 		std::string chrom; 
 
@@ -34,6 +35,7 @@ class AnnotationFile {
 
 			annotation_file_name = args -> annotation_file;
 			feature_tag = args -> feature_tag;
+			feature_id = args -> feature_id;
 
 		}
 
@@ -67,56 +69,72 @@ class AnnotationFile {
 		    int end;
 
 
-			// Initialize first gene
-			readRecord(record, gffIn);
-			curr_id = toCString(record.tagValues[0]);
-			Node *curr_node = new Node(curr_id, 
-									   (record.strand == '+') ? 0 : 1,
-									   toCString(record.ref));
-			head = curr_node;
-			tail = curr_node;
+		    Node *curr_node = NULL;
 
 
 			// iterate through genes
 		    while (!atEnd(gffIn)) {
 
 		        readRecord(record, gffIn);
-		      
-	     		temp_id = toCString(record.tagValues[0]);
 
-		        if (temp_id != curr_id) {
+		        if (record.type == feature_tag) {
 
-		        	if (record.type == "gene") {
+		        	// get id
+		     		for (int i = 0; i < length(record.tagValues); i ++) {
+		     			if (record.tagNames[i] == feature_id) {
+		     				temp_id = toCString(record.tagValues[i]);
+		     				break;
+		     			}
+		     		}
 
-		        		curr_id = temp_id;
+		     		if (temp_id == "") {
+   		   				std::cerr << "ERROR: Could not identify Feature ID.\n";
+						throw "ERROR: Could not identify Feature ID.";
+	   		   		}
 
-		        		// if (curr_node -> gene_id == "ENSMUSG00000098679.3") {
+	   		   		if (temp_id != curr_id) {
 
-		        		// 	for (int i = 0; i < curr_node -> clust_count; i++) {
-		        		// 		std::cerr << "\t" << curr_node -> clust_vec[(2 * i)]
-		        		// 				  << "\t" << curr_node -> clust_vec[(2*i)+1] << "\n";
-		        		// 	}
-		        		// }
+	   		   			curr_id = temp_id;
 
-		        		// Create node
+	   		   			// Create node
 						Node *new_node = new Node(temp_id, 
 												  (record.strand == '+') ? 0 : 1,
 												  toCString(record.ref));
 
-						// link nodes within graph
-						curr_node -> set_next(new_node);
-						new_node -> set_prev(curr_node);
-						curr_node = new_node;
-						tail = curr_node;		        	
-		        	} 
+						
+						// if first node
+						if (curr_node == NULL) {
+							curr_node = new_node;
+							tail = curr_node;
+							head = curr_node;
+						
+						} else {
 
-		        } else if (record.type == feature_tag) {
+							// link nodes within graph
+							curr_node -> set_next(new_node);
+							new_node -> set_prev(curr_node);
+							curr_node = new_node;
+							tail = curr_node;
 
-		        	begin = record.beginPos;
-		        	end = record.endPos - 1;
+						}
+
+						begin = record.beginPos;
+	        			end = record.endPos - 1;
 
 
-		        	curr_node -> modify_cluster(begin, end, 0);
+	        			curr_node -> modify_cluster(begin, end, 0);	
+
+					
+	   		   		} else {
+
+	   		   			begin = record.beginPos;
+	        			end = record.endPos - 1;
+
+
+	        			curr_node -> modify_cluster(begin, end, 0);
+
+
+	   		   		}
 
 		        }
 			}

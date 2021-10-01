@@ -22,7 +22,9 @@ struct ImpactArguments {
     //int min_coverage;					// min coverage
 
     // Features
+    bool isGFF;
     std::string feature_tag;            // name of feature tag
+    std::string feature_id;             // ID of feature
 
 };
 
@@ -107,6 +109,11 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
         ArgParseArgument::STRING, "STRING"));
     setDefaultValue(parser, "feature-tag", "exon");
 
+    addOption(parser, seqan::ArgParseOption(
+        "i", "feature-id", "ID of feature (use for GFFs).",
+        ArgParseArgument::STRING, "STRING"));
+    setDefaultValue(parser, "feature-id", "gene_id");
+
 
     // Add Information 
     addUsageLine(parser, "input.sorted.bam annotation.gtf [options]");
@@ -134,9 +141,13 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
 
     // Check file type of second positional arg
     input_file_ext = getFileExtension(getArgument(parser, 1));
-    if (input_file_ext != "gtf") {
-        std::cerr << "ERROR: Unaccapetd File Format: \"." << input_file_ext <<  "\". Only accepts \".gtf\",  extension.\n";
+    if (input_file_ext != "gtf" && input_file_ext != "gff") {
+        std::cerr << "ERROR: Unaccapetd File Format: \"." << input_file_ext <<  "\". Only accepts \".gtf\" and \".gff\",  extension.\n";
         return ArgumentParser::PARSE_ERROR;
+    }
+
+    if (input_file_ext == "gff") {
+        args.isGFF = true; 
     }
 
 
@@ -154,6 +165,7 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
     getOptionValue(args.mapq_min, parser, "mapq-min");
     //getOptionValue(args.min_coverage, parser, "min-coverage");
     getOptionValue(args.feature_tag, parser, "feature-tag");
+    getOptionValue(args.feature_id, parser, "feature-id");
 
     return seqan::ArgumentParser::PARSE_OK;
 
