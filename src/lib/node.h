@@ -183,7 +183,8 @@ class Node {
 					inc = 0;
 
 				// If not gapped, add to start position
-				} else if (alignment.CigarData[i].Type != 'S' && alignment.CigarData[i].Type != 'H') {					
+				} else if ((alignment.CigarData[i].Type) != 'S' && (alignment.CigarData[i].Type) != 'H' &&
+					       (alignment.CigarData[i].Type) != 'I') {					
 					inc += alignment.CigarData[i].Length;
 
 				}

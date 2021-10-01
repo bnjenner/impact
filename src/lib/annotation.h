@@ -66,8 +66,6 @@ class AnnotationFile {
 		    int begin;
 		    int end;
 
-		    int temp_count = 0;
-
 
 			// Initialize first gene
 			readRecord(record, gffIn);
@@ -82,8 +80,6 @@ class AnnotationFile {
 			// iterate through genes
 		    while (!atEnd(gffIn)) {
 
-		    	temp_count ++;
-
 		        readRecord(record, gffIn);
 		      
 	     		temp_id = toCString(record.tagValues[0]);
@@ -94,7 +90,7 @@ class AnnotationFile {
 
 		        		curr_id = temp_id;
 
-		        		// if (curr_node -> gene_id == "ENSMUSG00000028033.17") {
+		        		// if (curr_node -> gene_id == "ENSMUSG00000098679.3") {
 
 		        		// 	for (int i = 0; i < curr_node -> clust_count; i++) {
 		        		// 		std::cerr << "\t" << curr_node -> clust_vec[(2 * i)]
@@ -117,7 +113,7 @@ class AnnotationFile {
 		        } else if (record.type == feature_tag) {
 
 		        	begin = record.beginPos;
-		        	end = record.endPos;
+		        	end = record.endPos - 1;
 
 
 		        	curr_node -> modify_cluster(begin, end, 0);

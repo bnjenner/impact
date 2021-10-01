@@ -310,7 +310,7 @@ class AlignmentFile {
 				while (curr_gene != NULL) {	
 
 
-					// if on the wrong chromoeomse
+					// if on the wrong chromosome
 					if (curr_gene -> chrom != contig_cache[chr_num]) {
 
 						// iterate through and find genes on correct contig
