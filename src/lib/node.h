@@ -404,34 +404,33 @@ class Node {
 
 		}
 
-		void filter_clusters(const Parameters &parameters) {
+		// void filter_clusters(const Parameters &parameters) {
 
-			// // Iterate through clusters
-			// int i = 0;
+		// 	// // Iterate through clusters
+		// 	// int i = 0;
 
-			// while (i < clust_count) {
+		// 	// while (i < clust_count) {
 
-			// 	if ((count_vec[i] < (parameters.min_cov) )) {
-			// 		clust_vec.erase(clust_vec.begin() + (2 * i), clust_vec.begin() + (2 * i) + 2);
-			// 		count_vec.erase(count_vec.begin() + i, count_vec.begin() + i + 1);
-			// 		clust_count--;
+		// 	// 	if ((count_vec[i] < (parameters.min_cov) )) {
+		// 	// 		clust_vec.erase(clust_vec.begin() + (2 * i), clust_vec.begin() + (2 * i) + 2);
+		// 	// 		count_vec.erase(count_vec.begin() + i, count_vec.begin() + i + 1);
+		// 	// 		clust_count--;
 
-			// 	} else {
-			// 		i++;
+		// 	// 	} else {
+		// 	// 		i++;
 				
-			// 	}
+		// 	// 	}
 
-			// 	// if cluster is too long, pass to subdivide script, 
-			// 	//	probably will be implemented in python
-			// 	// if (((clust_vec[(2 * i) + 1] - clust_vec[(2 * i)]) > (width * 2)) &&
-			// 	// 	  count_vec[i] > 10) {
-			// 	// 	std::cerr << clust_vec[(2 * i)] << "\t" << clust_vec[(2 * i) + 1] << "\n";
+		// 	// 	// if cluster is too long, pass to subdivide script, 
+		// 	// 	//	probably will be implemented in python
+		// 	// 	// if (((clust_vec[(2 * i) + 1] - clust_vec[(2 * i)]) > (width * 2)) &&
+		// 	// 	// 	  count_vec[i] > 10) {
+		// 	// 	// 	std::cerr << clust_vec[(2 * i)] << "\t" << clust_vec[(2 * i) + 1] << "\n";
 
-			// 	// } 
+		// 	// 	// } 
 
-			// }
-			;
-		}
+		// 	// }
+		// }
 
 		////////////////////////////
 		// report cluster and counts

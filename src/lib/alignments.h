@@ -1,4 +1,4 @@
-#include <armadillo>
+// #include <armadillo>
 
 using namespace BamTools;
 
@@ -29,8 +29,8 @@ class AlignmentFile {
 		std::unordered_map<int, std::string> contig_cache;  // Unordered map 
 
 		// Modeling structures
-		arma::Row<int> cluster_lens;
-		arma::Row<int> cluster_exps;
+		//arma::Row<int> cluster_lens;
+		//arma::Row<int> cluster_exps;
 
 		// stats
 		int total_reads = 0;
@@ -186,92 +186,92 @@ class AlignmentFile {
 		}
 
 
-		///////////////////////
-		// return average width
-		int model_cluster_width() {
-			if (cluster_lens.size() > 5) {
-				return arma::mean(cluster_lens);
-			}
-			return 0;
-		}
+		// ///////////////////////
+		// // return average width
+		// int model_cluster_width() {
+		// 	if (cluster_lens.size() > 5) {
+		// 		return arma::mean(cluster_lens);
+		// 	}
+		// 	return 0;
+		// }
+
+		// ///////////////////////
+		// // return average exp
+		// int model_cluster_exp() {
+		// 	if (cluster_lens.size() > 5) {
+		// 		return arma::mean(cluster_exps);
+		// 	}
+		// 	return 0;
+		// }
+
+		// void refine_clusters(float width) {
+
+		// 	// initialize pointer
+		// 	Node *curr_node = graph.head;
+		// 	int i = 0;
+		// 	int x = 0;
+
+		// 	// check if head node exists
+		// 	if (curr_node != NULL) {
+
+		// 		// Iterate through nodes
+		// 		while (curr_node != NULL) {
+
+		// 			curr_node -> filter_clusters(parameters);
+
+		// 			curr_node = curr_node -> next;
+		// 			i++;
+		// 		}
+
+		// 	}
+
+		// }	
 
 		///////////////////////
-		// return average exp
-		int model_cluster_exp() {
-			if (cluster_lens.size() > 5) {
-				return arma::mean(cluster_exps);
-			}
-			return 0;
-		}
+		// // Init vectors given number of nodes
+		// void init_vectors() {
 
-		void refine_clusters(float width) {
+		// 	cluster_lens.zeros(100);
+		// 	cluster_exps.zeros(100);
 
-			// initialize pointer
-			Node *curr_node = graph.head;
-			int i = 0;
-			int x = 0;
+		// 	// initialize pointer
+		// 	Node *curr_node = graph.head;
+		// 	int i = 0;
+		// 	int x = 0;
 
-			// check if head node exists
-			if (curr_node != NULL) {
+		// 	// check if head node exists
+		// 	if (curr_node != NULL) {
 
-				// Iterate through nodes
-				while (curr_node != NULL) {
-
-					curr_node -> filter_clusters(parameters);
-
-					curr_node = curr_node -> next;
-					i++;
-				}
-
-			}
-
-		}	
-
-		///////////////////////
-		// Init vectors given number of nodes
-		void init_vectors() {
-
-			cluster_lens.zeros(100);
-			cluster_exps.zeros(100);
-
-			// initialize pointer
-			Node *curr_node = graph.head;
-			int i = 0;
-			int x = 0;
-
-			// check if head node exists
-			if (curr_node != NULL) {
-
-				// Iterate through nodes
-				while (curr_node != NULL && x < 100) {
+		// 		// Iterate through nodes
+		// 		while (curr_node != NULL && x < 100) {
 
 
 
-					if ((curr_node -> clust_count == 1) && 
-						(curr_node -> get_total_len() <= 500) &&
-						(curr_node -> get_total_len() >= 100)) { 
+		// 			if ((curr_node -> clust_count == 1) && 
+		// 				(curr_node -> get_total_len() <= 500) &&
+		// 				(curr_node -> get_total_len() >= 100)) { 
 
-						cluster_lens[x] = curr_node -> get_total_len();
-						cluster_exps[x] = curr_node -> read_count;
+		// 				cluster_lens[x] = curr_node -> get_total_len();
+		// 				cluster_exps[x] = curr_node -> read_count;
 
-						x++;
+		// 				x++;
 
-					}
+		// 			}
 
-					curr_node = curr_node -> next;
-					i++;
-				}
+		// 			curr_node = curr_node -> next;
+		// 			i++;
+		// 		}
 
-			} else {
-				x = 1;
-			}
-
-
-			cluster_exps.set_size(x);
-			cluster_lens.set_size(x);
+		// 	} else {
+		// 		x = 1;
+		// 	}
 
 
-		}
+		// 	cluster_exps.set_size(x);
+		// 	cluster_lens.set_size(x);
+
+
+		// }
 
 		///////////////////////
 		// overlap genes
