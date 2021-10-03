@@ -377,7 +377,7 @@ class AlignmentFile {
 								}
 							}
 
-							// Check for ambigous overlaps (preceding and following genes)
+							// Check for ambigous overlaps (following genes)
 							if (overlap) {
 
 								// Check forward
@@ -402,6 +402,10 @@ class AlignmentFile {
 											}
 										}
 
+										if (overlap == 1) {
+											break;
+										}
+
 										// move on to next gene
 										temp_gene = temp_gene -> next;
 
@@ -410,37 +414,7 @@ class AlignmentFile {
 										}
 									}	
 								}	
-
-								// Check reverse
-								temp_gene = curr_gene -> prev;
 								
-								// temp isn't NULL and cluster isn't already ambiguous
-								if ((temp_gene != NULL) && (curr_clust -> ambiguous != 1)) {
-
-									// iterate through clusters if not alread ambigous
-									while (temp_gene -> get_stop() > curr_clust -> get_start()) {
-			
-										for (int x = 1; x < temp_gene -> clust_count; x++) {
-
-											overlap = curr_clust -> check_ambiguous(temp_gene -> clust_vec[(2 * x)], 
-																				    temp_gene -> clust_vec[(2 * x) + 1],
-																				    temp_gene -> strand);
-
-											if (overlap == 1) {
-												curr_clust -> ambiguous = 1;
-												break;
-											}
-										}
-
-										// move to next cluster
-										temp_gene = temp_gene -> prev;
-
-										if (temp_gene == NULL) {
-											break;
-										}
-
-									}
-								}
 
 								// if (curr_gene -> gene_id == "ENSMUSG00000028033.17") {
 								// 	std::cerr << curr_clust -> clust_vec[0] << "\t"
@@ -456,6 +430,17 @@ class AlignmentFile {
 									unique_reads += curr_clust -> read_count;
 								} else {
 									ambiguous_reads += curr_clust -> read_count;
+									std::cerr << "\n";
+									std::cerr << contig_cache[chr_num] << "\t";
+									for (int i = 0; i < curr_clust -> clust_count; i++) {
+										std::cerr << "\t" << curr_clust -> clust_vec[(2*i)] << "\t"
+												  << curr_clust -> clust_vec[(2*i)+1] << "\n";
+									}
+											 
+									std::cerr << curr_gene -> gene_id << "\t" 
+											  << temp_gene -> gene_id << "\n";
+
+									std::cerr << "\n";
 								}
 
 								break;

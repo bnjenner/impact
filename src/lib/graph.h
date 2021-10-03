@@ -269,7 +269,8 @@ class Alignmnet_Graph {
 				temp_node = curr_node -> next;
 
 				t_restart = 0;
-					
+
+	
 				while (true) {
 
 					// checks if curr_node is last node or beyond range

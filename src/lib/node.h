@@ -463,7 +463,7 @@ class Node {
 
 			// Print "Gene" line, not contiguous
 			std::cout << contig_name << "\timpact\tcluster\t"
-					  << clust_vec[0] + 1 << "\t" << clust_vec[((clust_count - 1) * 2) + 1] + 1
+					  << clust_vec[0] + 1 << "\t" << clust_vec[((clust_count - 1) * 2) + 1]
 					  << "\t.\t" << s << "\t.\t"
 					  << "gene_id \"impact." << contig_name << "." << gene_count << "\"; "
 					  << "subclusters \"" << clust_count << "\";\n";
@@ -474,7 +474,7 @@ class Node {
 
 				// Print name, strand, and first start
 				std::cout << contig_name << "\timpact\tsubcluster\t";
-				std::cout << clust_vec[(i * 2)] + 1 << "\t" << clust_vec[(i * 2) + 1] + 1;
+				std::cout << clust_vec[(i * 2)] + 1 << "\t" << clust_vec[(i * 2) + 1];
 
 				// Print the rest lol
 				std::cout << "\t.\t" << s << "\t.\t"
