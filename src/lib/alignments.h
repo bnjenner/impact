@@ -498,17 +498,17 @@ class AlignmentFile {
 									unique_reads += curr_clust -> read_count;
 								} else {
 									ambiguous_reads += curr_clust -> read_count;
-									std::cerr << "\n";
-									std::cerr << contig_cache[chr_num] << "\t";
-									for (int i = 0; i < curr_clust -> clust_count; i++) {
-										std::cerr << "\t" << curr_clust -> clust_vec[(2*i)] << "\t"
-												  << curr_clust -> clust_vec[(2*i)+1] << "\n";
-									}
+									
+									// std::cerr << "\n";
+									// std::cerr << contig_cache[chr_num] << "\t";
+									// for (int i = 0; i < curr_clust -> clust_count; i++) {
+									// 	std::cerr << "\t" << curr_clust -> clust_vec[(2*i)] << "\t"
+									// 			  << curr_clust -> clust_vec[(2*i)+1] << "\n";
+									// }
 											 
-									std::cerr << curr_gene -> gene_id << "\t" 
-											  << temp_gene -> gene_id << "\n";
-
-									std::cerr << "\n";
+									// std::cerr << curr_gene -> gene_id << "\t" 
+									// 		  << temp_gene -> gene_id << "\n";
+									// std::cerr << "\n";
 								}
 
 								break;
