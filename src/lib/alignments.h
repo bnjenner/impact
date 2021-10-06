@@ -287,7 +287,12 @@ class AlignmentFile {
 			Node *temp_gene = NULL;
 
 			std::vector<Node *> prev_gene{annotation.head, annotation.head};
-			int overlap = 0;
+			
+			float overlap_score = 0;
+			float temp_overlap_score = 0;
+			int overlapped_bases = 0;
+			int subcluster_length = 0;
+			
 			int temp_strand = 0;
 			int next_start = 0;
 			bool assigned = false;
@@ -364,21 +369,46 @@ class AlignmentFile {
 						// if possibility of overlap
 						} else {
 
-							// iterate through subclusters. check overlap
-							for (int x = 1; x < curr_gene -> clust_count; x++) {
+							overlap_score = 0.0;
 
-								overlap = curr_clust -> check_overlap(curr_gene -> clust_vec[(2 * x)], 
-																	  curr_gene -> clust_vec[(2 * x) + 1],
-																	  curr_gene -> strand);
+							// iterate through subclusters. check overlap with gene
+							for (int x = 0; x < curr_clust -> clust_count; x++) {
 
-								// if overlap, move on 
-								if (overlap == 1) {
-									break;
+								subcluster_length = (curr_clust -> clust_vec[(2 * x) + 1]) - (curr_clust -> clust_vec[(2 * x)]) + 1;
+																	         
+								overlapped_bases = curr_gene -> check_genes(curr_clust -> clust_vec[(2 * x)], 
+																	        curr_clust -> clust_vec[(2 * x) + 1],
+																	        curr_clust -> strand);
+
+								if (overlapped_bases != 0) {
+									overlap_score += curr_clust -> count_vec[x] / (subcluster_length - overlapped_bases + 1);
 								}
+
 							}
 
+
+							////////////////////////////
+							// may reimplement
+							// iterate through subclusters. check overlap
+							// for (int x = 1; x < curr_gene -> clust_count; x++) {
+
+							// 	temp_overlap = curr_clust -> check_genes(curr_gene -> clust_vec[(2 * x)], 
+							// 										     curr_gene -> clust_vec[(2 * x) + 1],
+							// 										     curr_gene -> strand);
+
+							// 	if (overlap == 1) {
+							// 		break;
+							// 	}
+							// }
+							////////////////////////////
+
+
 							// Check for ambigous overlaps (following genes)
-							if (overlap) {
+							if (overlap_score != 0.0) {
+
+								if (curr_clust -> get_start() == 65771872) {
+									std::cerr << overlap_score << "\n";
+								}
 
 								// Check forward
 								temp_gene = curr_gene -> next;
@@ -389,20 +419,34 @@ class AlignmentFile {
 									// iterate through following genes
 									while (temp_gene -> clust_vec[2] < curr_clust -> get_stop()) {
 
+										temp_overlap_score = 0.0;
+
 										// check for overlap, if there is, mark cluster as ambigous
-										for (int x = 1; x < temp_gene -> clust_count; x++) {
+										for (int x = 0; x < curr_clust -> clust_count; x++) {
 
-											overlap = curr_clust -> check_ambiguous(temp_gene -> clust_vec[(2 * x)], 
-																				    temp_gene -> clust_vec[(2 * x) + 1],
-																				    temp_gene -> strand);
+											subcluster_length = (curr_clust -> clust_vec[(2 * x) + 1]) - (curr_clust -> clust_vec[(2 * x)]) + 1;
 
-											if (overlap == 1) {
-												curr_clust -> ambiguous = 1;
-												break;
+											overlapped_bases = temp_gene -> check_genes(curr_clust -> clust_vec[(2 * x)], 
+																				        curr_clust -> clust_vec[(2 * x) + 1],
+																				        curr_clust -> strand);
+
+											if (overlapped_bases != 0) {
+												temp_overlap_score += curr_clust -> count_vec[x] / (subcluster_length - overlapped_bases + 1);
 											}
+
 										}
 
-										if (overlap == 1) {
+										if (curr_clust -> get_start() == 65771872) {
+											std::cerr << "\t" << temp_overlap_score << "\n";
+										}
+
+
+										if (temp_overlap_score > overlap_score) {
+											curr_gene = temp_gene;
+											overlap_score = temp_overlap_score;
+
+										} else if (temp_overlap_score == overlap_score) {
+											curr_clust -> ambiguous = 1;
 											break;
 										}
 
@@ -413,15 +457,39 @@ class AlignmentFile {
 											break;
 										}
 									}	
+
+									//////////////////////////////
+									// (may reimplement)
+									// iterate through following genes
+									// while (temp_gene -> clust_vec[2] < curr_clust -> get_stop()) {
+
+									// 	// check for overlap, if there is, mark cluster as ambigous
+									// 	for (int x = 1; x < temp_gene -> clust_count; x++) {
+
+									// 		temp_overlap = curr_clust -> check_genes(temp_gene -> clust_vec[(2 * x)], 
+									// 											     temp_gene -> clust_vec[(2 * x) + 1],
+									// 											     temp_gene -> strand);
+
+									// 		if (overlap == 1) {
+									// 			curr_clust -> ambiguous = 1;
+									// 			break;
+									// 		}
+									// 	}
+
+									// 	if (curr_clust -> ambiguous == 1 ) {
+									// 		break;
+									// 	}
+
+									// 	// move on to next gene
+									// 	temp_gene = temp_gene -> next;
+
+									// 	if (temp_gene == NULL) {
+									// 		break;
+									// 	}
+									// }
+									//////////////////////////////
 								}	
 								
-
-								// if (curr_gene -> gene_id == "ENSMUSG00000028033.17") {
-								// 	std::cerr << curr_clust -> clust_vec[0] << "\t"
-								// 			  << curr_clust -> read_count << "\t"
-								// 			  << curr_clust	-> ambiguous << "\n";
-								// }
-
 								assigned = true;
 
 								// if not ambigous, assign reads to gene

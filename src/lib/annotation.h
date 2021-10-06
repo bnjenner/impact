@@ -94,6 +94,13 @@ class AnnotationFile {
 
 	   		   		if (temp_id != curr_id) {
 
+	   		   			// if (curr_id == "ENSMUSG00000027710.15") {
+	   		   			// 	for (int i = 0; i < curr_node -> clust_count; i++) {
+	   		   			// 		std::cerr << curr_node -> clust_vec[(2*i)] << "\t"
+	   		   			// 				  << curr_node -> clust_vec[(2*i)+1] << "\n";
+	   		   			// 	}
+	   		   			// }
+
 	   		   			curr_id = temp_id;
 
 	   		   			// Create node

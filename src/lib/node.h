@@ -33,6 +33,9 @@ class Node {
 		int printed = 0;
 		int ambiguous = 0;
 
+
+		int max_overlap = 0;
+
 	////////////////////////////
 	// Constructors
 
@@ -170,7 +173,7 @@ class Node {
 				// If gap is encounterd, add splice, (may also need to check cigar string standards)
 				if (alignment.CigarData[i].Type == 'N') {
 
-					temp_vec[pos] = temp_vec[pos - 1] + inc;
+					temp_vec[pos] = temp_vec[pos - 1] + inc - 1;
 
 					temp_vec.reserve(temp_vec.size() + 2);
 
@@ -233,44 +236,74 @@ class Node {
 
 
 		////////////////////////////
-		// Check ambiguous
-		int check_ambiguous(int &temp_start, int &temp_stop, int &temp_strand) {
+		// Check genes
+		int check_genes(int &temp_start, int &temp_stop, int &temp_strand) {
 
 			// is strand correct
 			if (strand != temp_strand) {
 				return 0;
 			}
 
-			float cov_threshold = read_count / static_cast<double>(0.25);
-			cov_threshold = 0.0;
+			// float cov_threshold = read_count * static_cast<double>(0.50);
+			// cov_threshold = 0.0;
+
+			int overlap_score = 0;
 
 			// iterate through all clusters
-			for (int i = 0; i < clust_count; i++) {
+			for (int i = 1; i < clust_count; i++) {
 
-				if (count_vec[i] >= cov_threshold) {
+				// if subcluster begins within exon
+				if ((clust_vec[(i * 2)] <= temp_start) && (clust_vec[(i * 2) + 1] >= temp_start)) {
 
-					// if ((clust_vec[(i * 2)] > temp_start) && (clust_vec[(i * 2)] < temp_stop)) {
+					// if subcluster is entirely within exon
+					if (clust_vec[(i * 2) + 1] >= temp_stop) {
+						overlap_score += (temp_stop - temp_start) + 1;
+						// return 2;
+						// max_overlap = std::max(max_overlap, 2);
+					} else {
+						overlap_score += (clust_vec[(i * 2) + 1] - temp_start) + 1;
+						//max_overlap = std::max(max_overlap, 1);
+					}
+				
+				// if subcluster starts before exon but overlaps with it 
+				} else if ((clust_vec[(i * 2)] > temp_start) && (clust_vec[(i * 2)] <= temp_stop)) {
+
+					if (temp_stop > clust_vec[(i * 2) + 1]) {
+						overlap_score += (clust_vec[(i * 2) + 1] - clust_vec[(i * 2)]) + 1;
+					
+					} else {
+						overlap_score += (temp_stop - clust_vec[(i * 2)]) + 1;
+					}
+					//max_overlap = std::max(max_overlap, 1);
+					//return 1;
+				}
+
+					//////////////////////////////
+					// (may reimplement)					
+					// // if subcluster starts before exon but overlaps with it 
+					// } else if ((clust_vec[(i * 2)] < temp_start) && (clust_vec[(i * 2) + 1] >= temp_start)) {
 					// 	return 1;
 					// }
 
 					// check if beginning of read exists within a cluster
-					if ((temp_start >= clust_vec[i * 2]) && (temp_start <= clust_vec[(i * 2) + 1])) {
-						return 1;
+					// if ((temp_start >= clust_vec[i * 2]) && (temp_start <= clust_vec[(i * 2) + 1])) {
+					// 	return 1;
 
-					// check if end of read exists within a cluster				
-					} else if ((temp_stop >= clust_vec[i * 2]) && (temp_stop <= clust_vec[(i * 2) + 1])) {
-						return 1;
+					// // check if end of read exists within a cluster				
+					// } else if ((temp_stop >= clust_vec[i * 2]) && (temp_stop <= clust_vec[(i * 2) + 1])) {
+					// 	return 1;
 
-					// in read spans cluster 
-					} else if ((temp_start <= clust_vec[i * 2]) && (temp_stop >= clust_vec[(i * 2) + 1])) {
-						return 1;
-
-					}
-
-				}
+					// // in read spans cluster 
+					// } else if ((temp_start <= clust_vec[i * 2]) && (temp_stop >= clust_vec[(i * 2) + 1])) {
+					// 	return 1;
+					//////////////////////////////
+				
+					// }
 			}
 
-			return 0;
+			//max_overlap = std::max(max_overlap, 1);
+
+			return overlap_score;
 		}
 
 
