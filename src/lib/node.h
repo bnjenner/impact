@@ -244,10 +244,7 @@ class Node {
 				return 0;
 			}
 
-			// float cov_threshold = read_count * static_cast<double>(0.50);
-			// cov_threshold = 0.0;
-
-			int overlap_score = 0;
+			int max_overlap = 0;
 
 			// iterate through all clusters
 			for (int i = 1; i < clust_count; i++) {
@@ -257,53 +254,19 @@ class Node {
 
 					// if subcluster is entirely within exon
 					if (clust_vec[(i * 2) + 1] >= temp_stop) {
-						overlap_score += (temp_stop - temp_start) + 1;
-						// return 2;
-						// max_overlap = std::max(max_overlap, 2);
+						max_overlap = std::max(max_overlap, 2);
 					} else {
-						overlap_score += (clust_vec[(i * 2) + 1] - temp_start) + 1;
-						//max_overlap = std::max(max_overlap, 1);
+						max_overlap = std::max(max_overlap, 1);
 					}
 				
 				// if subcluster starts before exon but overlaps with it 
 				} else if ((clust_vec[(i * 2)] > temp_start) && (clust_vec[(i * 2)] <= temp_stop)) {
-
-					if (temp_stop > clust_vec[(i * 2) + 1]) {
-						overlap_score += (clust_vec[(i * 2) + 1] - clust_vec[(i * 2)]) + 1;
-					
-					} else {
-						overlap_score += (temp_stop - clust_vec[(i * 2)]) + 1;
-					}
-					//max_overlap = std::max(max_overlap, 1);
-					//return 1;
+					max_overlap = std::max(max_overlap, 1);
 				}
-
-					//////////////////////////////
-					// (may reimplement)					
-					// // if subcluster starts before exon but overlaps with it 
-					// } else if ((clust_vec[(i * 2)] < temp_start) && (clust_vec[(i * 2) + 1] >= temp_start)) {
-					// 	return 1;
-					// }
-
-					// check if beginning of read exists within a cluster
-					// if ((temp_start >= clust_vec[i * 2]) && (temp_start <= clust_vec[(i * 2) + 1])) {
-					// 	return 1;
-
-					// // check if end of read exists within a cluster				
-					// } else if ((temp_stop >= clust_vec[i * 2]) && (temp_stop <= clust_vec[(i * 2) + 1])) {
-					// 	return 1;
-
-					// // in read spans cluster 
-					// } else if ((temp_start <= clust_vec[i * 2]) && (temp_stop >= clust_vec[(i * 2) + 1])) {
-					// 	return 1;
-					//////////////////////////////
-				
-					// }
 			}
 
-			//max_overlap = std::max(max_overlap, 1);
 
-			return overlap_score;
+			return max_overlap;
 		}
 
 
