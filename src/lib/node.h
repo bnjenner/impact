@@ -254,7 +254,7 @@ class Node {
 
 					// if subcluster is entirely within exon
 					if (clust_vec[(i * 2) + 1] >= temp_stop) {
-						max_overlap = std::max(max_overlap, 2);
+						max_overlap = 2;
 					} else {
 						max_overlap = std::max(max_overlap, 1);
 					}

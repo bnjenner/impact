@@ -290,7 +290,10 @@ class AlignmentFile {
 			
 			int overlap = 0;
 			int temp_overlap = 0;
-			
+			int cmp_overlap = 0;
+			int overlapping_reads = 0;
+			int temp_overlapping_reads = 0;
+
 			int temp_strand = 0;
 			int next_start = 0;
 			bool assigned = false;
@@ -362,6 +365,7 @@ class AlignmentFile {
 						} else {
 
 							overlap = 0;
+							overlapping_reads = 0;
 
 							// iterate through subclusters. check overlap
 							for (int x = 0; x < curr_clust -> clust_count; x++) {
@@ -369,6 +373,11 @@ class AlignmentFile {
 								temp_overlap = curr_gene -> check_genes(curr_clust -> clust_vec[(2 * x)], 
 																	    curr_clust -> clust_vec[(2 * x) + 1],
 																	    curr_clust -> strand);
+
+								
+								if (temp_overlap != 0) {
+									overlapping_reads += curr_clust -> count_vec[x];
+								}
 
 								overlap = std::max(temp_overlap, overlap);
 							}
@@ -383,9 +392,11 @@ class AlignmentFile {
 								// Temp gene isn't NULL
 								if (temp_gene != NULL) {
 
-									////////////////////////////
 									// iterate through following genes
 									while (temp_gene -> clust_vec[2] < curr_clust -> get_stop()) {
+
+										temp_overlapping_reads = 0;
+										cmp_overlap = 0;
 
 										// check for overlap, if there is, mark cluster as ambigous
 										for (int x = 0; x < curr_clust -> clust_count; x++) {
@@ -394,14 +405,34 @@ class AlignmentFile {
 																				    curr_clust -> clust_vec[(2 * x) + 1],
 																				    curr_clust -> strand);
 
-											if (temp_overlap != 0) {
-												curr_clust -> ambiguous = 1;
-												break;
+											// if overlap, add to overlapping read accumulator
+											if (temp_overlap > 0) {
+												temp_overlapping_reads += curr_clust -> count_vec[x];
 											}
+
+											// keep track of max overlap
+											cmp_overlap = std::max(temp_overlap, cmp_overlap);
+
 										}
 
-										if (curr_clust -> ambiguous == 1) {
-											break;
+										// if number of overlapping reads is equal 
+										if (temp_overlapping_reads == overlapping_reads) {
+
+											// if overlapping scores are equal, assign ambiguous
+											if (cmp_overlap == overlap) {
+												curr_clust -> ambiguous = 1;
+												break;
+											
+											// if new overlap is better, replace gene assignment and continue
+											} else if (cmp_overlap > overlap) {
+												curr_gene = temp_gene;
+												overlapping_reads = temp_overlapping_reads;
+											}
+
+										// if number of overlapping reads is greater than, replace gene assignment and continue
+										} else if (temp_overlapping_reads > overlapping_reads) {
+											curr_gene = temp_gene;
+											overlapping_reads = temp_overlapping_reads;
 										}
 
 										// move on to next gene
@@ -411,7 +442,6 @@ class AlignmentFile {
 											break;
 										}
 									}
-									////////////////////////////
 								}	
 								
 								assigned = true;
@@ -423,16 +453,16 @@ class AlignmentFile {
 								} else {
 									ambiguous_reads += curr_clust -> read_count;
 									
-									// std::cerr << "\n";
-									// std::cerr << contig_cache[chr_num] << "\t";
-									// for (int i = 0; i < curr_clust -> clust_count; i++) {
-									// 	std::cerr << "\t" << curr_clust -> clust_vec[(2*i)] << "\t"
-									// 			  << curr_clust -> clust_vec[(2*i)+1] << "\n";
-									// }
+									std::cerr << "\n";
+									std::cerr << contig_cache[chr_num] << "\t";
+									for (int i = 0; i < curr_clust -> clust_count; i++) {
+										std::cerr << "\t" << curr_clust -> clust_vec[(2*i)] << "\t"
+												  << curr_clust -> clust_vec[(2*i)+1] << "\n";
+									}
 											 
-									// std::cerr << curr_gene -> gene_id << "\t" 
-									// 		  << temp_gene -> gene_id << "\n";
-									// std::cerr << "\n";
+									std::cerr << curr_gene -> gene_id << "\t" 
+											  << temp_gene -> gene_id << "\n";
+									std::cerr << "\n";
 								}
 
 								break;
