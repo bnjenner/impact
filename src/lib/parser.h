@@ -14,11 +14,11 @@ struct ImpactArguments {
     // Program
     int threads;                        // threads
     std::string library_type;           // library type (SE or PE)
-    std::string strandedness;           // strandedness
+    std::string stranded;           // strandedness
     
     // Alignments
     bool nonunique_alignments;			// count primary and secondary alignments
-    int mapq_min;						// minimum mapq score
+    int mapq;						// minimum mapq score
     //int min_coverage;					// min coverage
 
     // Features
@@ -26,22 +26,6 @@ struct ImpactArguments {
     std::string feature_tag;            // name of feature tag
     std::string feature_id;             // ID of feature
 
-};
-
-// parameters definition for alignment and graph classes (maybea a little redundant)
-struct Parameters {
-
-    // Program
-    char library_type;              // library type (p, s)
-    char stranded;                  // strandedness of library (f, r)
-    
-    // Alignments
-    bool nonunique_alignments;      // consider secondary alignments 
-    int mapq;                       // minimum mapping quality
-    //int min_cov;                    // min coverage for cluster detection
-
-    // Features
-    std::string feature_tag;        // name of feature tag
 };
 
 
@@ -160,9 +144,9 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
     // Populate options
     getOptionValue(args.threads, parser, "threads");
     getOptionValue(args.library_type, parser, "library-type");
-    getOptionValue(args.strandedness, parser, "strandedness");
+    getOptionValue(args.stranded, parser, "strandedness");
     args.nonunique_alignments = isSet(parser, "nonunique-alignments");
-    getOptionValue(args.mapq_min, parser, "mapq-min");
+    getOptionValue(args.mapq, parser, "mapq-min");
     //getOptionValue(args.min_coverage, parser, "min-coverage");
     getOptionValue(args.feature_tag, parser, "feature-tag");
     getOptionValue(args.feature_id, parser, "feature-id");

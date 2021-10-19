@@ -12,7 +12,7 @@ class Alignmnet_Graph {
 		// Useful global variables
 		int ref; 
 		std::string contig_name;
-		Parameters parameters;
+		const ImpactArguments *parameters;
 
 		// Import node variables
 		Node *head = NULL;
@@ -36,12 +36,12 @@ class Alignmnet_Graph {
 
 		///////////////////////
 		// Initialize empty object
-		void initialize(int ref_num, std::string ref_name, const Parameters &pre_parameters) {
+		void initialize(int ref_num, std::string ref_name, const ImpactArguments *args) {
 
 			// Initialize contig number and name
 			ref = ref_num;
 			contig_name = ref_name;
-			parameters = pre_parameters;
+			parameters = args;
 
 		}		
 
@@ -77,23 +77,23 @@ class Alignmnet_Graph {
 
 				uint16_t NH_tag;
 				alignment.GetTag("NH", NH_tag);
-				if (NH_tag > 1) {
+				if ((NH_tag > 1) && (parameters -> nonunique_alignments == false)) {
 					multimapped_reads ++;
 					continue;
 				}
 
 				// Exclude secondary alignment 
-				if (!alignment.IsPrimaryAlignment() && (parameters.nonunique_alignments == false)) {
+				if (!alignment.IsPrimaryAlignment() && (parameters -> nonunique_alignments == false)) {
 					continue;
 				} 
 	
 				// If paired end, check propper pair
-				if (!alignment.IsProperPair() && (parameters.library_type == 'p')) {
+				if (!alignment.IsProperPair() && (parameters -> library_type == "paired")) {
 					continue;
 				}
 
 				// Check if sufficient mapping quality
-				if (alignment.MapQuality < parameters.mapq) {
+				if (alignment.MapQuality < parameters -> mapq) {
 		       		continue;
 				}
 
@@ -157,23 +157,23 @@ class Alignmnet_Graph {
 
 				uint16_t NH_tag;
 				alignment.GetTag("NH", NH_tag);
-				if (NH_tag > 1) {
+				if ((NH_tag > 1) && (parameters -> nonunique_alignments == false)) {
 					multimapped_reads ++;
 					continue;
 				}
 
 				// Exclude secondary alignments
-				if (!alignment.IsPrimaryAlignment() && (parameters.nonunique_alignments == false)) {
+				if (!alignment.IsPrimaryAlignment() && (parameters -> nonunique_alignments == false)) {
 					continue;
 				}
 
 				// If paired end, check propper pair
-				if (!alignment.IsProperPair() && (parameters.library_type == 'p')) {
+				if (!alignment.IsProperPair() && (parameters -> library_type == "paired")) {
 					continue;
 				}
 
 				// Check if sufficient mapping quality
-				if (alignment.MapQuality < parameters.mapq) {
+				if (alignment.MapQuality < parameters -> mapq) {
 		       		continue;
 				}
 

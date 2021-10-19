@@ -29,6 +29,7 @@ int main(int argc, char const ** argv) {
     std::cerr << "[IMPACT]\n";
     auto start = std::chrono::high_resolution_clock::now(); 
 
+
     ////////////////////////////
     // Parse arguments
     ImpactArguments args;
@@ -40,6 +41,8 @@ int main(int argc, char const ** argv) {
             return res;
     }
 
+
+    ////////////////////////////
     // Parse input files
     std::cerr << "[Parsing Input Files...]\n";
 
@@ -52,6 +55,7 @@ int main(int argc, char const ** argv) {
     init_alignment.open();
     init_alignment.get_order();
     init_alignment.close();
+
 
 
     ////////////////////////////
@@ -70,16 +74,15 @@ int main(int argc, char const ** argv) {
         alignments[i] -> copy_annotation(init_annotation, i);
     }
 
-    ////////////////////////////////////////
+    ///////////
     // TO DO
-
     // - add mutex lock for writing to stderr
-
-    ////////////////////////////////////////
+    ///////////
 
     // initialize increment and process number
     int i = 0;
     int proc = std::max(args.threads - 1, 1);
+
 
     // establish scope for queue, once it leaves scope, it will call 
     //  destructor which joins the remaining threads and modifies 
@@ -132,6 +135,7 @@ int main(int argc, char const ** argv) {
     // model.exp = model.tot_exp / model.n;
 
     
+
     ////////////////////////////
     // Writing results
 
@@ -153,7 +157,6 @@ int main(int argc, char const ** argv) {
         total_multimapping += alignments[i] -> multimapped_reads;
         total_no_feature += alignments[i] -> unassigned_reads;
         total_reads += alignments[i] -> total_reads;
-        //alignments[i] -> print_counts();
         
     }
     
@@ -168,6 +171,8 @@ int main(int argc, char const ** argv) {
     auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start); 
 
 
+
+    ////////////////////////////
     // Say goodbye :)
     std::cerr << "[Program Complete!]\n";
     std::cerr << "[Runtime: " << duration.count() << " seconds]\n";  

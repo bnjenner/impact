@@ -13,7 +13,8 @@ class AnnotationFile {
 		std::string feature_tag;
 		std::string feature_id;
 		std::string annotation_file_name;
-		std::string chrom; 
+		std::string chrom;
+		std::string stranded;
 
 		// node variables
 		Node *head = NULL;
@@ -36,6 +37,7 @@ class AnnotationFile {
 			annotation_file_name = args -> annotation_file;
 			feature_tag = args -> feature_tag;
 			feature_id = args -> feature_id;
+			stranded = args -> stranded;
 
 		}
 
@@ -65,18 +67,21 @@ class AnnotationFile {
 		    // Init temp variables
 		    std::string curr_id = "";
 		    std::string temp_id = "";
+		    int temp_strand;
 		    int begin;
 		    int end;
 
-
+		    // Initilize pointer
 		    Node *curr_node = NULL;
 
 
 			// iterate through genes
 		    while (!atEnd(gffIn)) {
 
+		    	// read next gff line
 		        readRecord(record, gffIn);
 
+		        // if the correct type
 		        if (record.type == feature_tag) {
 
 		        	// get id
@@ -87,11 +92,13 @@ class AnnotationFile {
 		     			}
 		     		}
 
+		     		// if no feature ID field, throw error
 		     		if (temp_id == "") {
    		   				std::cerr << "ERROR: Could not identify Feature ID.\n";
 						throw "ERROR: Could not identify Feature ID.";
 	   		   		}
 
+	   		   		// if new feature
 	   		   		if (temp_id != curr_id) {
 
 	   		   			// if (curr_id == "ENSMUSG00000027710.15") {
@@ -101,11 +108,19 @@ class AnnotationFile {
 	   		   			// 	}
 	   		   			// }
 
+	   		   			// create new feature
 	   		   			curr_id = temp_id;
+
+	   		   			// check strandedness
+	   		   			if (stranded == "reverse") {
+	   		   				temp_strand = 1 - ((record.strand == '+') ? 0 : 1);
+	   		   			} else {
+	   		   				temp_strand = (record.strand == '+') ? 0 : 1;
+	   		   			}
 
 	   		   			// Create node
 						Node *new_node = new Node(temp_id, 
-												  (record.strand == '+') ? 0 : 1,
+												  temp_strand,
 												  toCString(record.ref));
 
 						
@@ -125,19 +140,21 @@ class AnnotationFile {
 
 						}
 
+						// get coordinates
 						begin = record.beginPos;
 	        			end = record.endPos - 1;
 
-
+	        			// add region
 	        			curr_node -> modify_cluster(begin, end, 0);	
 
 					
 	   		   		} else {
 
+	   		   			// get coordinates
 	   		   			begin = record.beginPos;
 	        			end = record.endPos - 1;
 
-
+	        			// add region
 	        			curr_node -> modify_cluster(begin, end, 0);
 
 

@@ -18,10 +18,10 @@ class AlignmentFile {
 		Alignmnet_Graph graph;
 		AnnotationFile annotation;
 
-		// Program options 
+		// Parameters
 		std::string alignment_file_name;
 		std::string index;
-		Parameters parameters; 		// parameters struct (found in parser.h)
+		const ImpactArguments *parameters; 		// parameters struct (found in parser.h)
 
 		// Thread-specific paramters
 		int chr_num;
@@ -32,14 +32,13 @@ class AlignmentFile {
 		//arma::Row<int> cluster_lens;
 		//arma::Row<int> cluster_exps;
 
-		// stats
+		// Read Statistics
 		int total_reads = 0;
 		int ambiguous_reads = 0;
 		int unique_reads = 0;
 		int multimapped_reads = 0;
 		int unassigned_reads = 0;
 
-		int sub_total = 0;
 
 	////////////////////////////
 	// Constructors
@@ -53,11 +52,7 @@ class AlignmentFile {
 			// Set Attributes
 			alignment_file_name = args -> alignment_file;
 			index = args -> index_file;
-			parameters.library_type = ((args -> library_type) == "paired") ? 'p' : 's';
-			parameters.stranded = ((args -> strandedness) == "forward") ? 'f' : 'r'; 
-			parameters.nonunique_alignments = args -> nonunique_alignments;
-			parameters.mapq = args -> mapq_min;
-			//parameters.min_cov = args -> min_coverage;
+			parameters = args;
 
 			chr_num = ref;
 		}
@@ -282,20 +277,23 @@ class AlignmentFile {
 				return;
 			}
 
+			// Graph pointers
 			Node *curr_clust = graph.head;
 			Node *curr_gene = annotation.head;
 			Node *temp_gene = NULL;
 
+			// Vector of Pointers for start positions in list
 			std::vector<Node *> prev_gene{annotation.head, annotation.head};
 			
+			// Temp variables for overlap type and overlapping reads
 			int overlap = 0;
 			int temp_overlap = 0;
 			int cmp_overlap = 0;
 			int overlapping_reads = 0;
 			int temp_overlapping_reads = 0;
 
+			// Temp variables 
 			int temp_strand = 0;
-			int next_start = 0;
 			bool assigned = false;
 
 			while (curr_clust != NULL) {
@@ -305,13 +303,6 @@ class AlignmentFile {
 				// get strand, use it to index current gene to check
 				temp_strand = curr_clust -> strand;
 				curr_gene = prev_gene[temp_strand];
-
-				// get next start 
-				if (curr_clust -> next == NULL) {
-					next_start = -1;
-				} else {
-					next_start = curr_clust -> next -> get_start();
-				}
 
 				while (curr_gene != NULL) {	
 

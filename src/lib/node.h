@@ -400,7 +400,7 @@ class Node {
 
 		}
 
-		// void filter_clusters(const Parameters &parameters) {
+		// void filter_clusters(const ImpactArguments &parameters) {
 
 		// 	// // Iterate through clusters
 		// 	// int i = 0;
@@ -430,7 +430,7 @@ class Node {
 
 		////////////////////////////
 		// report cluster and counts
-		int print_cluster(const std::string &contig_name, const Parameters &parameters, int gene_count) {
+		int print_cluster(const std::string &contig_name, const ImpactArguments *parameters, int gene_count) {
 
 			// strand character
 			char s;
@@ -441,21 +441,11 @@ class Node {
 			}
 
 			// Assign strand
-			if (parameters.stranded == 'f') {
+			if (parameters -> stranded == "forward") {
 				s = (strand == 1) ? '-' : '+';
 			} else {
 				s = (strand == 1) ? '+' : '-';
 			}
-
-
-
-			// ////////////////////////////////
-			// // for testing
-			// if (clust_count > 1) {
-			// 	return 1;
-			// }
-			// ////////////////////////////////
-
 
 			// Print "Gene" line, not contiguous
 			std::cout << contig_name << "\timpact\tcluster\t"
@@ -481,17 +471,6 @@ class Node {
 			}
 
 			return 1;
-		}
-
-		void exon_print() {
-
-			std::cerr << gene_id << "\n";
-
-			for (int i = 1; i < clust_count; i++) {
-				std::cerr << clust_vec[(2 * i)] << "\t" 
-						  << clust_vec[(2 * i) + 1] << "\n";
-			}
-
 		}
 
 };
