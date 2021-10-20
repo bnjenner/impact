@@ -93,7 +93,7 @@ class Node {
 		// ANNOTATION INIT
 
 		// Annotation Initialzed
-		Node(std::string temp_gene_id, int temp_strand, std::string temp_chrom) {
+		Node(std::string temp_gene_id, int temp_strand, int begin, int end, std::string temp_chrom) {
 
 			gene_id = temp_gene_id;
 			strand = temp_strand;
@@ -101,7 +101,7 @@ class Node {
 			read_count = 0;
 			clust_count = 1;
 
-			clust_vec = std::vector<int>{0, 0};
+			clust_vec = std::vector<int>{begin, end};
 		}
 
 
@@ -247,7 +247,7 @@ class Node {
 			int max_overlap = 0;
 
 			// iterate through all clusters
-			for (int i = 1; i < clust_count; i++) {
+			for (int i = 0; i < clust_count; i++) {
 
 				// if subcluster begins within exon
 				if ((clust_vec[(i * 2)] <= temp_start) && (clust_vec[(i * 2) + 1] >= temp_start)) {

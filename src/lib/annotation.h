@@ -101,7 +101,8 @@ class AnnotationFile {
 	   		   		// if new feature
 	   		   		if (temp_id != curr_id) {
 
-	   		   			// if (curr_id == "ENSMUSG00000027710.15") {
+	   		   			// if (curr_id != "") {
+	   		   			// 	std::cerr << temp_id << "\t" << curr_node -> clust_count << "\n";
 	   		   			// 	for (int i = 0; i < curr_node -> clust_count; i++) {
 	   		   			// 		std::cerr << curr_node -> clust_vec[(2*i)] << "\t"
 	   		   			// 				  << curr_node -> clust_vec[(2*i)+1] << "\n";
@@ -118,9 +119,14 @@ class AnnotationFile {
 	   		   				temp_strand = (record.strand == '+') ? 0 : 1;
 	   		   			}
 
+	   		   			// get coordinates
+						begin = record.beginPos;
+	        			end = record.endPos - 1;
+
 	   		   			// Create node
 						Node *new_node = new Node(temp_id, 
 												  temp_strand,
+												  begin, end,
 												  toCString(record.ref));
 
 						
@@ -140,13 +146,6 @@ class AnnotationFile {
 
 						}
 
-						// get coordinates
-						begin = record.beginPos;
-	        			end = record.endPos - 1;
-
-	        			// add region
-	        			curr_node -> modify_cluster(begin, end, 0);	
-
 					
 	   		   		} else {
 
@@ -161,7 +160,15 @@ class AnnotationFile {
 	   		   		}
 
 		        }
+
 			}
+
+			// std::cerr << temp_id << "\n";
+			// for (int i = 0; i < curr_node -> clust_count; i++) {
+			// 	std::cerr << curr_node -> clust_vec[(2*i)] << "\t"
+			// 			  << curr_node -> clust_vec[(2*i)+1] << "\n";
+			// }
+
 		}
 
 		void print_annotation() {

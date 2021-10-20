@@ -304,8 +304,8 @@ class AlignmentFile {
 				temp_strand = curr_clust -> strand;
 				curr_gene = prev_gene[temp_strand];
 
+				// iterate through genes
 				while (curr_gene != NULL) {	
-
 
 					// if on the wrong chromosome
 					if (curr_gene -> chrom != contig_cache[chr_num]) {
@@ -320,7 +320,6 @@ class AlignmentFile {
 							
 						// iterate through and find genes on same strand
 						while (curr_gene != NULL) {
-							
 							if (curr_gene -> strand == temp_strand) {
 								break;
 							}
@@ -349,7 +348,7 @@ class AlignmentFile {
 
 
 						// If cluster is before gene, find next cluster
-						} else if (curr_clust -> get_stop() < curr_gene -> clust_vec[2]) {
+						} else if (curr_clust -> get_stop() < curr_gene -> get_start()) {
 							break;
 
 						// if possibility of overlap
@@ -365,11 +364,12 @@ class AlignmentFile {
 																	    curr_clust -> clust_vec[(2 * x) + 1],
 																	    curr_clust -> strand);
 
-								
+								// if subcluster overlaps, add number of reads to total overlapping reads
 								if (temp_overlap != 0) {
 									overlapping_reads += curr_clust -> count_vec[x];
 								}
 
+								// check if max overlap
 								overlap = std::max(temp_overlap, overlap);
 							}
 
@@ -384,8 +384,9 @@ class AlignmentFile {
 								if (temp_gene != NULL) {
 
 									// iterate through following genes
-									while (temp_gene -> clust_vec[2] < curr_clust -> get_stop()) {
+									while (temp_gene -> get_start() < curr_clust -> get_stop()) {
 
+										// zero temp variables
 										temp_overlapping_reads = 0;
 										cmp_overlap = 0;
 
@@ -429,6 +430,7 @@ class AlignmentFile {
 										// move on to next gene
 										temp_gene = temp_gene -> next;
 
+										// if no more genes, break
 										if (temp_gene == NULL) {
 											break;
 										}
@@ -441,6 +443,7 @@ class AlignmentFile {
 								if (curr_clust -> ambiguous == 0) {
 									curr_gene -> read_count += curr_clust -> read_count;
 									unique_reads += curr_clust -> read_count;
+								
 								} else {
 									ambiguous_reads += curr_clust -> read_count;
 									
@@ -465,9 +468,9 @@ class AlignmentFile {
 
 								// move on to next gene
 								curr_gene = curr_gene -> next;
-							
+								
+								// find gene with correct strand
 								while (curr_gene != NULL) {
-
 									if (curr_gene -> strand == temp_strand) {
 										break;
 									}
@@ -482,6 +485,7 @@ class AlignmentFile {
 
 				}
 
+				// increamenet unassigned reads
 				if (assigned != true) {
 					unassigned_reads += curr_clust -> read_count;
 				}
