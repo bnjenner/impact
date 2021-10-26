@@ -26,6 +26,9 @@ struct ImpactArguments {
     std::string feature_tag;            // name of feature tag
     std::string feature_id;             // ID of feature
 
+    // Output
+    std::string gtf_output;             // name of output gtf file
+
 };
 
 
@@ -98,6 +101,10 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
         ArgParseArgument::STRING, "STRING"));
     setDefaultValue(parser, "feature-id", "gene_id");
 
+      // Output GTF
+    addOption(parser, seqan::ArgParseOption(
+        "o", "output-gtf", "Output read cluster GTF file and specify name.",
+        ArgParseArgument::STRING, "STRING"));
 
     // Add Information 
     addUsageLine(parser, "input.sorted.bam annotation.gtf [options]");
@@ -150,6 +157,7 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
     //getOptionValue(args.min_coverage, parser, "min-coverage");
     getOptionValue(args.feature_tag, parser, "feature-tag");
     getOptionValue(args.feature_id, parser, "feature-id");
+    getOptionValue(args.gtf_output, parser, "output-gtf");
 
     return seqan::ArgumentParser::PARSE_OK;
 

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <chrono>
 #include <string>
 #include <vector>
@@ -6,6 +7,7 @@
 #include <math.h>
 #include <condition_variable>
 #include <mutex>
+//#include <armadillo>
 #include "api/BamReader.h"
 #include "api/BamAux.h"
 #include "lib/parser.h"
@@ -26,6 +28,7 @@ bool MAIN_THREAD = false; // found in queue.h
 // Main 
 int main(int argc, char const ** argv) {
 
+
     std::cerr << "[IMPACT]\n";
     auto start = std::chrono::high_resolution_clock::now(); 
 
@@ -40,7 +43,6 @@ int main(int argc, char const ** argv) {
     if (res != seqan::ArgumentParser::PARSE_OK) {
             return res;
     }
-
 
     ////////////////////////////
     // Parse input files
@@ -149,6 +151,7 @@ int main(int argc, char const ** argv) {
 
     // Report counts (this is single threaded for order reasons)
     std::cerr << "[Writing Results...]\n";
+    std::cerr << "[...Counts Data...]\n";
     for (int i = 0; i < n; i++) {
         //alignments[i] -> refine_clusters(model.width);
         alignments[i] -> print_genes();
@@ -165,6 +168,21 @@ int main(int argc, char const ** argv) {
     std::cout << "__multimapping\t" << total_multimapping << "\n";
     std::cout << "__unassigned\t" << total_no_feature << "\n";
     std::cout << "__total\t" << total_reads << "\n";
+
+
+    if (args.gtf_output != "") {
+
+        std::cerr << "[...Output GTFs...]\n";
+
+        // Overwrite file
+        std::ofstream newFile;
+        newFile.open(args.gtf_output);
+
+        for (int i = 0; i < n; i++) {
+            alignments[i] -> print_gtf();
+        }
+    }
+
 
 	// The most complicated line of "get the time" I have ever seen. 
     auto stop = std::chrono::high_resolution_clock::now(); 

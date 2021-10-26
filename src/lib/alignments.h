@@ -1,5 +1,3 @@
-// #include <armadillo>
-
 using namespace BamTools;
 
 //////////////////////////////////////
@@ -156,11 +154,11 @@ class AlignmentFile {
 
 				// collapse overlapping clusters
 				graph.collapse_graph();
+
 			}
 
 			multimapped_reads = graph.multimapped_reads;
 			total_reads = graph.total_reads;
-
 		}
 
 		///////////////////////
@@ -173,11 +171,18 @@ class AlignmentFile {
 
 
 		///////////////////////
-		// Print gemes
+		// Print genes
 		void print_genes() {
 
 			// report counts for read cluster
 			annotation.print_annotation();
+		}
+
+
+		///////////////////////
+		// Print clusters
+		void print_gtf() {
+			graph.print_graph();
 		}
 
 
@@ -304,6 +309,7 @@ class AlignmentFile {
 				temp_strand = curr_clust -> strand;
 				curr_gene = prev_gene[temp_strand];
 
+
 				// iterate through genes
 				while (curr_gene != NULL) {	
 
@@ -377,6 +383,9 @@ class AlignmentFile {
 							// Check for ambigous overlaps (following genes)
 							if (overlap != 0) {
 
+								// assign gene id to cluster
+								curr_clust -> assigned_gene	= curr_gene -> gene_id;
+
 								// Check forward
 								temp_gene = curr_gene -> next;
 
@@ -413,18 +422,21 @@ class AlignmentFile {
 											// if overlapping scores are equal, assign ambiguous
 											if (cmp_overlap == overlap) {
 												curr_clust -> ambiguous = 1;
+												curr_clust -> assigned_gene	= "";
 												break;
 											
 											// if new overlap is better, replace gene assignment and continue
 											} else if (cmp_overlap > overlap) {
 												curr_gene = temp_gene;
 												overlapping_reads = temp_overlapping_reads;
+												curr_clust -> assigned_gene	= curr_gene -> gene_id;
 											}
 
 										// if number of overlapping reads is greater than, replace gene assignment and continue
 										} else if (temp_overlapping_reads > overlapping_reads) {
 											curr_gene = temp_gene;
 											overlapping_reads = temp_overlapping_reads;
+											curr_clust -> assigned_gene	= curr_gene -> gene_id;
 										}
 
 										// move on to next gene
@@ -438,6 +450,7 @@ class AlignmentFile {
 								}	
 								
 								assigned = true;
+								curr_clust -> assigned = 1;
 
 								// if not ambigous, assign reads to gene
 								if (curr_clust -> ambiguous == 0) {

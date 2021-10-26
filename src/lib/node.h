@@ -18,11 +18,13 @@ class Node {
 		std::string gene_id = "";
 		std::string chrom = "";
 
+		std::string assigned_gene = "";
+
 		// Clusters
 		//    (heap allocation, minimizing can improve performance)
 		std::vector<int> clust_vec{-1, -1}; // array of cluster start and stops (evens are starts, odds are ends)
-
 		std::vector<int> count_vec{-1}; // array of cluster start and stops (evens are starts, odds are ends)
+		std::vector<BamAlignment> align_vec{};
 
 		// Links
 		Node *next = NULL;
@@ -31,8 +33,8 @@ class Node {
 		// Node Variables
 		int ishead = 0;
 		int printed = 0;
+		int assigned = 0;
 		int ambiguous = 0;
-
 
 		int max_overlap = 0;
 
@@ -67,13 +69,14 @@ class Node {
 				count_vec.push_back(1);
 			}
 
+			align_vec.push_back(alignment);
 		}
 
 		// Read cluster Initialized (region properties)
-		Node(std::vector<int> &temp_vec, int temp_strand, int ref_num) {
+		Node(BamAlignment &alignment, std::vector<int> &temp_vec, int ref_num) {
 
 			// Get cluster properties
-			strand = temp_strand;
+			strand = alignment.IsReverseStrand();
 			read_count = 1;
 			chrom_index = ref_num;
 		
@@ -86,6 +89,8 @@ class Node {
 			for (int i = 1; i < clust_count; i++) {
 				count_vec.push_back(1);
 			}
+
+			align_vec.push_back(alignment);
 		}
 
 
@@ -157,6 +162,23 @@ class Node {
 		// Set Prev
 		void set_prev(Node *node) {
 			prev = node;
+		}
+
+
+		////////////////////////////
+		// add alignment
+		void add_alignment(BamAlignment alignment) {
+			align_vec.push_back(alignment);
+		}
+
+		////////////////////////////
+		// concat alignment vector
+		void add_alignment(std::vector<BamAlignment> temp_vec) {
+			std::vector<BamAlignment> new_align_vec{};
+			new_align_vec.resize(align_vec.size() + temp_vec.size());
+		    std::move(align_vec.begin(), align_vec.end(), new_align_vec.begin());
+		    std::move(temp_vec.begin(), temp_vec.end(), new_align_vec.begin() + align_vec.size());
+		    align_vec = new_align_vec;
 		}
 
 
@@ -434,6 +456,7 @@ class Node {
 
 			// strand character
 			char s;
+			std::string assignment;
 
 			// If empty or does not meet miniumum coverage
 			if ((clust_vec[0] == -1)) {//|| read_count < parameters.min_cov) {
@@ -447,25 +470,43 @@ class Node {
 				s = (strand == 1) ? '+' : '-';
 			}
 
+			// assignment
+			if (assigned == 0) {
+				assignment = "__unassigned";
+
+			} else {
+
+				if (ambiguous == 1) {
+					assignment = "__ambiguous";
+				} else {
+					assignment = "__assigned";
+				}
+
+			}
+
+			std::ofstream outdata;
+			outdata.open(parameters -> gtf_output, std::ios::out | std::ios::app);
+
 			// Print "Gene" line, not contiguous
-			std::cout << contig_name << "\timpact\tcluster\t"
-					  << clust_vec[0] + 1 << "\t" << clust_vec[((clust_count - 1) * 2) + 1]
+			outdata << contig_name << "\timpact\tcluster\t"
+					  << clust_vec[0] + 1 << "\t" << clust_vec[((clust_count - 1) * 2) + 1] + 1
 					  << "\t.\t" << s << "\t.\t"
 					  << "gene_id \"impact." << contig_name << "." << gene_count << "\"; "
-					  << "subclusters \"" << clust_count << "\";\n";
+					  << "subclusters \"" << clust_count << "\"; "
+					  << "counts \"" << read_count << "\"; "
+					  << "assignment \"" << assignment << "\"\n";
 					  //<< "counts \"" << read_count << "\";\n";
 
 			// Iterate through clusters
 			for (int i = 0; i < clust_count; i++) {
 
 				// Print name, strand, and first start
-				std::cout << contig_name << "\timpact\tsubcluster\t";
-				std::cout << clust_vec[(i * 2)] + 1 << "\t" << clust_vec[(i * 2) + 1];
+				outdata << contig_name << "\timpact\tsubcluster\t" << clust_vec[(i * 2)] + 1 << "\t" << clust_vec[(i * 2) + 1] + 1;
 
 				// Print the rest lol
-				std::cout << "\t.\t" << s << "\t.\t"
+				outdata << "\t.\t" << s << "\t.\t"
 						  << "gene_id \"impact." << contig_name << "." << gene_count << "\"; "
-						  << "subcluster_id \"" << i + 1 << "\"; " 
+						  << "subcluster_id \"impact." << contig_name << "." << gene_count << "." << i + 1 << "\"; " 
 						  << "counts \"" << count_vec[i] <<"\";\n";
 
 			}
