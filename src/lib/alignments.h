@@ -175,7 +175,7 @@ class AlignmentFile {
 		void print_genes() {
 
 			// report counts for read cluster
-			annotation.print_annotation();
+			annotation.print_counts();
 		}
 
 
@@ -451,6 +451,7 @@ class AlignmentFile {
 								
 								assigned = true;
 								curr_clust -> assigned = 1;
+
 
 								// if not ambigous, assign reads to gene
 								if (curr_clust -> ambiguous == 0) {

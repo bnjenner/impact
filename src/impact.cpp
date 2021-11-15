@@ -52,6 +52,7 @@ int main(int argc, char const ** argv) {
     AnnotationFile init_annotation(&args);
     init_annotation.create_gene_graph();
 
+
     std::cerr << "[...Alignment File...]\n";
     AlignmentFile init_alignment(&args, 0);
     init_alignment.open();
@@ -170,6 +171,7 @@ int main(int argc, char const ** argv) {
     std::cout << "__total\t" << total_reads << "\n";
 
 
+    // Output read cluster gtf if specified
     if (args.gtf_output != "") {
 
         std::cerr << "[...Output GTFs...]\n";

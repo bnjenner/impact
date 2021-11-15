@@ -200,7 +200,7 @@ class Node {
 					temp_vec.reserve(temp_vec.size() + 2);
 
 					// expand vector, slow, will improve (maybe)
-					temp_vec.emplace_back(temp_vec[pos] + alignment.CigarData[i].Length);
+					temp_vec.emplace_back(temp_vec[pos] + alignment.CigarData[i].Length + 1);
 					temp_vec.emplace_back(-1);
 
 					

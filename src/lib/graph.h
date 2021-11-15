@@ -191,6 +191,7 @@ class Alignmnet_Graph {
 				// calculate splice sites
 				curr_node -> calculate_splice(alignment, temp_vec);
 
+
 				// number of aligned regions
 				regions = temp_vec.size() / 2;
 
