@@ -15,6 +15,7 @@ class AnnotationFile {
 		std::string annotation_file_name;
 		std::string chrom;
 		std::string stranded;
+		bool isGFF;
 
 		// node variables
 		Node *head = NULL;
@@ -38,6 +39,7 @@ class AnnotationFile {
 			feature_tag = args -> feature_tag;
 			feature_id = args -> feature_id;
 			stranded = args -> stranded;
+			isGFF = args -> isGFF;
 
 		}
 
@@ -116,25 +118,41 @@ class AnnotationFile {
 
 		///////////////////////
 		// parse 9th column of annotation files (tags)
-		void parse_annotation_tags(std::string &tag_column, std::vector<std::string> &tags) {
+		void parse_annotation_tags(std::string &tag_column, std::vector<std::string> &tags, bool isGFF) {
 
 			std::istringstream iss(tag_column);
 			std::string tag;
 
 			int n = 0;
 
-			// parse tags
-		    while(std::getline(iss, tag, ' ')) {  // but we can specify a different one
-		        
-		        // n is even
-		    	if (n % 2 == 1) {
-		    		tag.resize(tag.size() - 2);
-		    		tag.erase(0,1);
-		    	}
+			if (isGFF) {
+				
+				std::string subtag;
 
-		        tags.push_back(tag);
-		        n ++;
-		    }
+				// parse tags
+			    while(std::getline(iss, tag, ';')) {  // but we can specify a different one
+			        
+			    	while (std::getline(iss, subtag, '='))
+				        tags.push_back(tag);
+			    }
+
+			} else {
+
+				// parse tags
+			    while(std::getline(iss, tag, ' ')) {  // but we can specify a different one
+			        
+			        // n is even
+			    	if (n % 2 == 1) {
+			    		tag.resize(tag.size() - 2);
+			    		tag.erase(0,1);
+			    	}
+
+			        tags.push_back(tag);
+			        n ++;
+			    }
+			}
+
+			
 		}
 
 
@@ -175,7 +193,7 @@ class AnnotationFile {
 
 		       			// parse tags
 						std::vector<std::string> tags;
-						parse_annotation_tags(columns[8], tags);
+						parse_annotation_tags(columns[8], tags, isGFF);
 
 						// get id
 			     		for (int i = 0; i < tags.size(); i++) {
