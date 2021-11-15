@@ -131,9 +131,13 @@ class AnnotationFile {
 
 				// parse tags
 			    while(std::getline(iss, tag, ';')) {  // but we can specify a different one
-			        
-			    	while (std::getline(iss, subtag, '='))
-				        tags.push_back(tag);
+
+			    	std::istringstream iss2(tag);
+
+			    	while (std::getline(iss2, subtag, '=')) {
+				        tags.push_back(subtag);
+			    	}
+
 			    }
 
 			} else {
