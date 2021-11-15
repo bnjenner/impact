@@ -51,8 +51,6 @@ int main(int argc, char const ** argv) {
     std::cerr << "[...Annotation File...]\n";
     AnnotationFile init_annotation(&args);
     init_annotation.create_gene_graph();
-    init_annotation.print_graph();
-    exit(EXIT_FAILURE);
 
 
     std::cerr << "[...Alignment File...]\n";
