@@ -167,6 +167,12 @@ class AnnotationFile {
 			// open annotation file
 			std::ifstream infile(annotation_file_name);
 
+			// if no feature ID field, throw error
+     		if (!infile) {
+   				std::cerr << "ERROR: Could not read annotation file: " << annotation_file_name << "\n";
+				throw "ERROR: Could not read annotation file.";
+	   		}
+
 			// create col and line variables
 			std::vector<std::string> columns{9, ""};
 			std::string line;
