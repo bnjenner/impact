@@ -228,7 +228,6 @@ class Alignmnet_Graph {
 							}
 
 							curr_node -> read_count++;
-							curr_node -> add_alignment(alignment);
 							
 							// kill the loop
 							temp_start = -1;
@@ -309,8 +308,6 @@ class Alignmnet_Graph {
 						if (t_overlap == 1) {
 
 							t_restart = 1;
-
-							curr_node -> add_alignment(temp_node -> align_vec);
 
 							// iterate through every subcluster again, and add each
 							for (int x = 0; x < temp_node -> clust_count; x++) {

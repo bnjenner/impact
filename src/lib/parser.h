@@ -22,7 +22,7 @@ struct ImpactArguments {
     //int min_coverage;					// min coverage
 
     // Features
-    bool isGFF;
+    bool isGFF = false;                         // annotaiton file is gff
     std::string feature_tag;            // name of feature tag
     std::string feature_id;             // ID of feature
 

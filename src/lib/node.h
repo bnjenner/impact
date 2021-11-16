@@ -24,7 +24,6 @@ class Node {
 		//    (heap allocation, minimizing can improve performance)
 		std::vector<int> clust_vec{-1, -1}; // array of cluster start and stops (evens are starts, odds are ends)
 		std::vector<int> count_vec{-1}; // array of cluster start and stops (evens are starts, odds are ends)
-		std::vector<BamAlignment> align_vec{};
 
 		// Links
 		Node *next = NULL;
@@ -69,7 +68,6 @@ class Node {
 				count_vec.push_back(1);
 			}
 
-			align_vec.push_back(alignment);
 		}
 
 		// Read cluster Initialized (region properties)
@@ -90,7 +88,6 @@ class Node {
 				count_vec.push_back(1);
 			}
 
-			align_vec.push_back(alignment);
 		}
 
 
@@ -162,23 +159,6 @@ class Node {
 		// Set Prev
 		void set_prev(Node *node) {
 			prev = node;
-		}
-
-
-		////////////////////////////
-		// add alignment
-		void add_alignment(BamAlignment alignment) {
-			align_vec.push_back(alignment);
-		}
-
-		////////////////////////////
-		// concat alignment vector
-		void add_alignment(std::vector<BamAlignment> temp_vec) {
-			std::vector<BamAlignment> new_align_vec{};
-			new_align_vec.resize(align_vec.size() + temp_vec.size());
-		    std::move(align_vec.begin(), align_vec.end(), new_align_vec.begin());
-		    std::move(temp_vec.begin(), temp_vec.end(), new_align_vec.begin() + align_vec.size());
-		    align_vec = new_align_vec;
 		}
 
 
