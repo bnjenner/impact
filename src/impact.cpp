@@ -118,26 +118,7 @@ int main(int argc, char const ** argv) {
     main_cv.wait(main_lock, []{return MAIN_THREAD;});
     // unlock thread
     main_lock.unlock(); 
-    //std::cerr << "[Processing Complete!]\n";
 
-
-    // // Start modeling
-    // std::cerr << "[Modeling Peak Width...]\n";
-    // // Create model for width
-    // Model model;
-
-    // for (int i = 0; i < n; i++) {
-    //     if (alignments[i] -> model_cluster_width() > 0) {
-    //         model.tot_width += alignments[i] -> model_cluster_width(); 
-    //         model.tot_exp += alignments[i] -> model_cluster_exp(); 
-    //         model.n += 1;
-    //     }
-    // }
-
-    // model.width = model.tot_width / model.n;
-    // model.exp = model.tot_exp / model.n;
-
-    
 
     ////////////////////////////
     // Writing results

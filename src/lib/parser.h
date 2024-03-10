@@ -39,7 +39,7 @@ ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArgument
     // Setup ArgumentParser.
     ArgumentParser parser("impact");
     addDescription(parser, 
-                   "Identifies expressed transcripts using clusters of mapped reads from TAGseq experiments. Generates a GTF file written to stdout.");
+                   "Identifies expressed transcripts using clusters of mapped reads from TAGseq experiments.Generates a counts file written to stdout and optionally a GTF file of identified read clusters.");
 
 
     // Define Arguments

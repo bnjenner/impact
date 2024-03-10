@@ -1,0 +1,90 @@
+############## IMPACT ##############
+
+IMPACT (Identifies Multiple Peaks and Counts Transcripts) is a gene 
+expression quantification method for TAGseq experiments developed 
+by Bradley Jenner for his Undergraduate Honors Thesis at  UC Davis. 
+It is C++ tool that can take advantage of multiple threads and is my
+first attempt at building a high performing Bioinformatics tool.
+It uses assumptions made about the distribution of sequencing reads
+along the 3' UTR of a gene to group reads and assign their combined 
+read count to the gene whose annotation the cluster overlaps. 
+
+This tool is still very much in development. It relies partially
+on the bamtools and seqan C++ libraries, although mainly for parsing
+and manipulating bam and gtf files. This reliance will be revisited in
+future versions along with implementing an improved clustering 
+algorithm to improve read groupings and their gene assignment.
+
+For questions or comments, please contact
+Bradley Jenner at <bnjenner@ucdavis.edu>
+
+################### Installation ################### 
+
+0. Make sure cmake and make are installed on your machine.
+
+1. Clone this repository and change into it.
+
+   git clone https://github.com/bnjenner/impact.git
+   cd impact
+
+2. Create a build directory and change into it.
+
+   mkdir build
+   cd build
+
+3. Compile
+
+   cmake ../
+   make 
+
+4. Add path to bash profile
+
+   echo "export PATH=$PATH:path/to/build_directory" >> ~/.bash_profile
+   source ~/.bash_profile
+
+5. Give it a go! 
+
+################### USAGE ################### 
+    
+   impact [input.sorted.bam] [annotation.gtf|annotation.gff] [options]
+
+DESCRIPTION:
+    
+   Identifies expressed transcripts using clusters of mapped reads from TAGseq experiments.
+   Generates a counts file written to stdout and optionally a GTF file of identified read clusters.
+
+PARAMETERS:
+
+    -h, --help
+          Display the help message.
+
+    -t, --threads INTEGER
+          Number of processes for multithreading. Default: 1.
+
+    -l, --library-type STRING
+          Library type. Paired end is not recommended. Only used to check proper pairing. One of
+          single and paired. Default: single.
+
+    -s, --strandedness STRING
+          Strandedness of library. One of forward and reverse. Default: forward.
+
+    -n, --nonunique-alignments
+          Count primary and secondary read alignments.
+
+    -q, --mapq-min INTEGER
+          Minimum mapping quality score to consider for counts. Default: 1.
+
+    -f, --feature-tag STRING
+          Name of feature tag. Default: exon.
+
+    -i, --feature-id STRING
+          ID of feature (use for GFFs). Default: gene_id.
+
+    -o, --output-gtf STRING
+          Output read cluster GTF file and specify name.
+
+    --version
+          Display version information.
+
+
+###################################################
