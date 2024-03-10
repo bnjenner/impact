@@ -2,17 +2,21 @@
 
 IMPACT (Identifies Multiple Peaks and Counts Transcripts) is a gene 
 expression quantification method for TAGseq experiments developed 
-by Bradley Jenner for his Undergraduate Honors Thesis at  UC Davis. 
-It is C++ tool that can take advantage of multiple threads and is my
-first attempt at building a high performing Bioinformatics tool.
-It uses assumptions made about the distribution of sequencing reads
-along the 3' UTR of a gene to group reads and assign their combined 
-read count to the gene whose annotation the cluster overlaps. 
+by Bradley Jenner for his Undergraduate Honors Thesis at UC Davis. 
+It operates on assumptions made about the distribution of sequencing reads
+along the 3' UTR of a gene to cluster reads and assign their combined 
+read count to the most appropriate gene. It also can generate a GTF file
+defining the boundaries and expression levels for each identified cluster. 
+It is a C++ tool that can take advantage of multiple threads and is more or
+less the developers first attempt at making more performant software. For
+a more detailed explanation of the algorithm and validation methods, 
+please read the associated paper submitted for the thesis, Jenner_Undergradaute_Thesis.pdf.
+
 
 This tool is still very much in development. It relies partially
 on the bamtools and seqan C++ libraries, although mainly for parsing
 and manipulating bam and gtf files. This reliance will be revisited in
-future versions along with implementing an improved clustering 
+future versions along with implementing a more sopisiticated clustering 
 algorithm to improve read groupings and their gene assignment.
 
 For questions or comments, please contact
