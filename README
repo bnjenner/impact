@@ -5,7 +5,9 @@ expression quantification method for TAGseq experiments developed
 by Bradley Jenner for his Undergraduate Honors Thesis at UC Davis. 
 It operates on assumptions made about the distribution of sequencing reads
 along the 3' UTR of a gene to cluster reads and assign their combined 
-read count to the most appropriate gene. It also can generate a GTF file
+read count to the most appropriate gene. This method is particularly
+useful in non-model organisms where 3' UTRs for most genes are poorly
+annotated, resulting in massive data loss. It also can generate a GTF file
 defining the boundaries and expression levels for each identified cluster. 
 It is a C++ tool that can take advantage of multiple threads and is more or
 less the developers first attempt at making more performant software. For
