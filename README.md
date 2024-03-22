@@ -1,4 +1,6 @@
-############## IMPACT ##############
+# IMPACT
+
+## Introduction
 
 IMPACT (Identifies Multiple Peaks and Counts Transcripts) is a gene 
 expression quantification method for TAGseq experiments developed 
@@ -24,34 +26,37 @@ algorithm to improve read groupings and their gene assignment.
 For questions or comments, please contact
 Bradley Jenner at <bnjenner@ucdavis.edu>
 
-################### Installation ################### 
+## Installation
 
 0. Make sure cmake and make are installed on your machine.
 
 1. Clone this repository and change into it.
-
-   git clone https://github.com/bnjenner/impact.git
-   cd impact
+```
+git clone https://github.com/bnjenner/impact.git
+cd impact
+```
 
 2. Create a build directory and change into it.
-
-   mkdir build
-   cd build
+```
+mkdir build
+cd build
+```
 
 3. Compile
-
-   cmake ../
-   make 
+```
+cmake ../
+make
+```
 
 4. Add path to bash profile
-
-   echo "export PATH=$PATH:path/to/build_directory" >> ~/.bash_profile
-   source ~/.bash_profile
-
+```
+echo "export PATH=$PATH:path/to/build_directory" >> ~/.bash_profile
+source ~/.bash_profile
+```
 5. Give it a go! 
 
-################### USAGE ################### 
-    
+## Usage
+```
    impact [input.sorted.bam] [annotation.gtf|annotation.gff] [options]
 
 DESCRIPTION:
@@ -92,5 +97,4 @@ PARAMETERS:
     --version
           Display version information.
 
-
-###################################################
+```
