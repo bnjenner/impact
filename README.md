@@ -19,7 +19,8 @@ please read the associated paper submitted for the thesis, Jenner_Undergradaute_
 
 This tool is still very much in development. It relies partially
 on the bamtools and seqan C++ libraries, although mainly for parsing
-and manipulating bam and gtf files. This reliance will be revisited in
+and manipulating bam and gtf files. Additionally, the threadsafe queue
+was possible thanks to EmbeddedArtistry. This reliance will be revisited in
 future versions along with implementing a more sopisiticated clustering 
 algorithm to improve read groupings and their gene assignment.
 
