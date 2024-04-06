@@ -1,34 +1,22 @@
-using namespace BamTools;
-
 //////////////////////////////////////
 // Alignment Class
 class AlignmentFile {
 
 	public:
 
-	////////////////////////////
-	// Attributes
+		BamTools::BamReader inFile;		   	  // Bam File Object
+		BamTools::BamAlignment alignment;	  // BamAlignmentRecord record;
+		Alignmnet_Graph graph;				  // Graph for clusters
+		AnnotationFile annotation;			  // copy of annotation (must be copied)
 
-		BamReader inFile;				// Bam File Object
-		BamAlignment alignment;			// BamAlignmentRecord record;
+		const ImpactArguments *parameters; 	  // parameters struct (found in parser.h)
 
-		// Data Structure
-		Alignmnet_Graph graph;
-		AnnotationFile annotation;
-
-		// Parameters
-		std::string alignment_file_name;
-		std::string index;
-		const ImpactArguments *parameters; 		// parameters struct (found in parser.h)
-
-		// Thread-specific paramters
+		std::string alignment_file_name;	  // alignment file
+		std::string index;				  	  // alignment index file
+		
+		BamTools::RefVector references;
 		int chr_num;
-		RefVector references;
-		std::unordered_map<int, std::string> contig_cache;  // Unordered map 
-
-		// Modeling structures
-		//arma::Row<int> cluster_lens;
-		//arma::Row<int> cluster_exps;
+		std::unordered_map<int, std::string> contig_cache;  
 
 		// Read Statistics
 		int total_reads = 0;
@@ -37,250 +25,101 @@ class AlignmentFile {
 		int multimapped_reads = 0;
 		int unassigned_reads = 0;
 
-
-	////////////////////////////
-	// Constructors
-
 		// Empty
 		AlignmentFile() {};
 
 		// Initialized
 		AlignmentFile(const ImpactArguments *args, int ref) {
-
-			// Set Attributes
 			alignment_file_name = args -> alignment_file;
 			index = args -> index_file;
 			parameters = args;
-
 			chr_num = ref;
 		}
 
-	////////////////////////////
-	// Methods
 
-		///////////////////////
-		// Open files
 		void open() {
-
 			// Open alignment file
 			if (!inFile.Open(alignment_file_name)) {
 				std::cerr << "ERROR: Could not read alignment file: " << alignment_file_name << "\n";
 				throw "ERROR: Could not read alignment file.";
-			}
-			
-
+			}		
 			// Open index file
 			if (!inFile.OpenIndex(index)) {
 				std::cerr << "ERROR: Could not read index file: " << index << "\n";
 				throw "ERROR: Could not read index file";
 			}
-
 		}
 
-
-		///////////////////////
-		// Close files
-		void close() {
-			inFile.Close();
-		}
+		void close() { inFile.Close(); }
+		void print_counts() { graph.print_graph(); }
+		void print_genes() { annotation.print_counts(); }
+		void print_gtf() { graph.print_graph(); }
 
 
-		///////////////////////
 		// parse input file for contig order and jump position
 		void get_order() {
+			
+			BamTools::SamHeader head = inFile.GetHeader();
 
-			// Get header and check if file is sorted
-			SamHeader head = inFile.GetHeader();
 			if (head.HasSortOrder()) {
-
 				std::string sortOrder = head.SortOrder;
-
 				if (sortOrder.compare("coordinate") != 0) {
 					std::cerr << "ERROR: Sorted alignment file required.\n";
 					throw "ERROR: Could not read alignment file.";
 				}
-
 			} else {
 				std::cerr << "ERROR: BAM file has no @HD SO:<SortOrder> attribute. Impossible to determine sort order.\n";
-					throw "ERROR: Could determine sort status.";
+				throw "ERROR: Could determine sort status.";
 
 			}
-
 
 			// Generate Ref Map (contig indicies)
 			references = inFile.GetReferenceData();
 			for (int i = 0; i < references.size(); i++) {
-
 				contig_cache[i] = references.at(i).RefName;
-
 			}
-
 		}
-
-
-		///////////////////////
+		
 		// copy contig cache for name and position in file
 		void copy_order(const std::unordered_map<int, std::string> &init_contig_cache) {
 			contig_cache = init_contig_cache;
 		}
 
-
-		///////////////////////
-		// copy annotation
+		// copy annotation (point to it)
 		void copy_annotation(const AnnotationFile &init_annotation, int temp_chr_num) {
 			annotation = init_annotation;
 			annotation.chrom = contig_cache[temp_chr_num];
 		}
 
 
-		///////////////////////
 		// Grab Alignments within Interval Using Bam Index
 		void get_counts() {
 
-			// Create Graph object
 			graph.initialize(chr_num, contig_cache[chr_num], parameters);
 
-			// Jump to desired region in bam
 			if (!inFile.Jump(chr_num)) {
 				std::cerr << "[ERROR: Could not jump to region: " << chr_num << ".]\n";
 				return;
 			}
 
-			// Set head of graph
 			if (graph.set_head(inFile, alignment)) {
-
-				// Create clusters of reads (overlap them)
-				graph.create_clusters(inFile, alignment);
-
-				// collapse overlapping clusters
-				graph.collapse_graph();
-
+				graph.create_clusters(inFile, alignment);  // Create clusters of reads (overlap them)
+				graph.collapse_graph();					   // collapse overlapping clusters
 			}
 
 			multimapped_reads = graph.multimapped_reads;
 			total_reads = graph.total_reads;
 		}
 
-		///////////////////////
-		// Print clusters
-		void print_counts() {
-
-			// report counts for read cluster
-			graph.print_graph();
-		}
-
-
-		///////////////////////
-		// Print genes
-		void print_genes() {
-
-			// report counts for read cluster
-			annotation.print_counts();
-		}
-
-
-		///////////////////////
-		// Print clusters
-		void print_gtf() {
-			graph.print_graph();
-		}
-
-
-		// ///////////////////////
-		// // return average width
-		// int model_cluster_width() {
-		// 	if (cluster_lens.size() > 5) {
-		// 		return arma::mean(cluster_lens);
-		// 	}
-		// 	return 0;
-		// }
-
-		// ///////////////////////
-		// // return average exp
-		// int model_cluster_exp() {
-		// 	if (cluster_lens.size() > 5) {
-		// 		return arma::mean(cluster_exps);
-		// 	}
-		// 	return 0;
-		// }
-
-		// void refine_clusters(float width) {
-
-		// 	// initialize pointer
-		// 	Node *curr_node = graph.head;
-		// 	int i = 0;
-		// 	int x = 0;
-
-		// 	// check if head node exists
-		// 	if (curr_node != NULL) {
-
-		// 		// Iterate through nodes
-		// 		while (curr_node != NULL) {
-
-		// 			curr_node -> filter_clusters(parameters);
-
-		// 			curr_node = curr_node -> next;
-		// 			i++;
-		// 		}
-
-		// 	}
-
-		// }	
-
-		///////////////////////
-		// // Init vectors given number of nodes
-		// void init_vectors() {
-
-		// 	cluster_lens.zeros(100);
-		// 	cluster_exps.zeros(100);
-
-		// 	// initialize pointer
-		// 	Node *curr_node = graph.head;
-		// 	int i = 0;
-		// 	int x = 0;
-
-		// 	// check if head node exists
-		// 	if (curr_node != NULL) {
-
-		// 		// Iterate through nodes
-		// 		while (curr_node != NULL && x < 100) {
-
-
-
-		// 			if ((curr_node -> clust_count == 1) && 
-		// 				(curr_node -> get_total_len() <= 500) &&
-		// 				(curr_node -> get_total_len() >= 100)) { 
-
-		// 				cluster_lens[x] = curr_node -> get_total_len();
-		// 				cluster_exps[x] = curr_node -> read_count;
-
-		// 				x++;
-
-		// 			}
-
-		// 			curr_node = curr_node -> next;
-		// 			i++;
-		// 		}
-
-		// 	} else {
-		// 		x = 1;
-		// 	}
-
-
-		// 	cluster_exps.set_size(x);
-		// 	cluster_lens.set_size(x);
-
-
-		// }
-
-		///////////////////////
 		// overlap genes
 		void overlap_genes() {
 
-			// if no clutsers, don't bother
-			if (graph.head == NULL) {
-				return;
-			}
+			/*
+				This function is horrible... I really need to 
+				find a better way to do this...
+			*/ 
+
+			if (graph.head == NULL) { return; }
 
 			// Graph pointers
 			Node *curr_clust = graph.head;
@@ -383,10 +222,7 @@ class AlignmentFile {
 							// Check for ambigous overlaps (following genes)
 							if (overlap != 0) {
 
-								// assign gene id to cluster
 								curr_clust -> assigned_gene	= curr_gene -> gene_id;
-
-								// Check forward
 								temp_gene = curr_gene -> next;
 
 								// Temp gene isn't NULL
@@ -452,25 +288,12 @@ class AlignmentFile {
 								assigned = true;
 								curr_clust -> assigned = 1;
 
-
 								// if not ambigous, assign reads to gene
 								if (curr_clust -> ambiguous == 0) {
 									curr_gene -> read_count += curr_clust -> read_count;
 									unique_reads += curr_clust -> read_count;
-								
 								} else {
 									ambiguous_reads += curr_clust -> read_count;
-									
-									// std::cerr << "\n";
-									// std::cerr << contig_cache[chr_num] << "\t";
-									// for (int i = 0; i < curr_clust -> clust_count; i++) {
-									// 	std::cerr << "\t" << curr_clust -> clust_vec[(2*i)] << "\t"
-									// 			  << curr_clust -> clust_vec[(2*i)+1] << "\n";
-									// }
-											 
-									// std::cerr << curr_gene -> gene_id << "\t" 
-									// 		  << temp_gene -> gene_id << "\n";
-									// std::cerr << "\n";
 								}
 
 								break;
@@ -480,7 +303,6 @@ class AlignmentFile {
 								// Issue is that gapped clusters do not advance cluster, yet skip many genes
 								// in the process, solution is to trackback to genes
 
-								// move on to next gene
 								curr_gene = curr_gene -> next;
 								
 								// find gene with correct strand
@@ -510,23 +332,11 @@ class AlignmentFile {
 		}
 
 
-
-		///////////////////////
-		// Close files
 		void launch() {
-
-			this -> open();
-
-			// find clusters
-			this -> get_counts();
-
-			// build model
-			//this -> init_vectors();
-
-			// overlap genes
-			this -> overlap_genes();
-
-			this -> close();		
+			this -> open();			  // open files
+			this -> get_counts();	  // find clusters
+			this -> overlap_genes();  // overlap genes
+			this -> close();		  // close files
 		}	
 
 };

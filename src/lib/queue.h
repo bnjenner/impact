@@ -7,7 +7,6 @@
 
 extern bool MAIN_THREAD;
 
-
 //////////////////////////////////////
 // Thread safe dispatch queue
 class thread_queue {
@@ -16,79 +15,50 @@ class thread_queue {
 
 	public:
 
-	////////////////////////////
-	// Attributes
-
 		std::mutex mlock;
 		std::vector<std::thread> threads;
 		std::queue<call> call_queue;
 		std::condition_variable cv;
 		bool quit = false;
 
-	////////////////////////////
-	// Constructors
-
-		thread_queue(size_t thread_cnt) : threads(thread_cnt) {
-			
+		thread_queue(size_t thread_cnt) : threads(thread_cnt) {	
 			for (size_t i = 0; i < threads.size(); i++) {
 				threads[i] = std::thread(&thread_queue::thread_handler, this);
 			}
-
 		}
 
-	////////////////////////////
-	// Destructors
-
 		~thread_queue() {
-
+			
 			// creat lock and set quit to true
-			std::unique_lock<std::mutex> lock(mlock);
+			std::unique_lock<std::mutex> lock(mlock);  
 			quit = true;
 
 			// unlock, notify all threads
 			lock.unlock();
 			cv.notify_all();
 
-
-			// wait for threads to finish
-			for (size_t i = 0; i < threads.size(); i++) {
-				
-				if (threads[i].joinable()) {
-					threads[i].join();
+			for (auto &t: threads) {
+				if (t.joinable()) {
+					t.join();
 				}
-
 			}
-
 			::MAIN_THREAD = true;
 		}
 
-	////////////////////////////
-	// Methods
-
-		////////////////////////////
 		// dispatch (basically enqueue)
-		void dispatch(const call &&job) {
-	
-			// create lock
-			std::unique_lock<std::mutex> lock(mlock);
-			// enqueue
-			call_queue.push(std::move(job));
-			// unlock
-			lock.unlock();
-			// notify conditional var
-			cv.notify_one();
+		void dispatch(const call &&job) {		
+			std::unique_lock<std::mutex> lock(mlock); 	// create lock
+			call_queue.push(std::move(job));		 	// enqueue
+			lock.unlock(); 								// unlock
+			cv.notify_one();							// notify conditional var
 		}
 
-
-		////////////////////////////
 		// thread handler
 		void thread_handler(void) {
 
-			// create lock
-			std::unique_lock<std::mutex> lock(mlock);
+			std::unique_lock<std::mutex> lock(mlock); // create lock
 
 			do {
-
 				// wait for data (still need to think about this one)
 				cv.wait(lock, [this]{
 					return (call_queue.size() || quit);
@@ -101,25 +71,14 @@ class thread_queue {
 					auto job = std::move(call_queue.front());
 					call_queue.pop();
 
-					//unlock now that we're done messing with the queue
-					lock.unlock();
-
-					// call job
-					job();
-
-					// lock 
-					lock.lock();
+					lock.unlock();	// unlock now that we're done messing with the queue
+					job(); 			// call job
+					lock.lock(); 	// lock 
 				}
-
 			} while (!quit);
 		
 		}
 
-		bool finished(){
-			return (call_queue.empty());
-		}
-
-		int size(){
-			return call_queue.size();
-		}
+		bool finished(){ return (call_queue.empty()); }
+		int size(){ return call_queue.size(); }
 };
