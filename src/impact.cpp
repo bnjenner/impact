@@ -22,11 +22,11 @@ std::condition_variable main_cv;
 bool MAIN_THREAD = false;
 
 //////////////////////////////////////
-// Main 
+// Main
 int main(int argc, char const ** argv) {
 
     // initialize clock
-    auto start = std::chrono::high_resolution_clock::now(); 
+    auto start = std::chrono::high_resolution_clock::now();
 
     std::cerr << "[IMPACT]\n";
 
@@ -36,10 +36,10 @@ int main(int argc, char const ** argv) {
 
     // Return Error if Parsing Error
     if (res != seqan::ArgumentParser::PARSE_OK) {
-            return res;
+        return res;
     }
 
-    
+
     std::cerr << "[Parsing Input Files...]\n";
 
     // Parse annoatation file
@@ -47,7 +47,7 @@ int main(int argc, char const ** argv) {
     AnnotationFile init_annotation(&args);
     init_annotation.create_gene_graph();
 
-    // Parse alignment file    
+    // Parse alignment file
     std::cerr << "[...Alignment File...]\n";
     AlignmentFile init_alignment(&args, 0);
     init_alignment.open();
@@ -63,7 +63,7 @@ int main(int argc, char const ** argv) {
     std::vector<AlignmentFile*> alignments;
     alignments.reserve(n);
 
-    // load 
+    // load
     for (int i = 0; i < n; i++) {
         alignments.emplace_back(new AlignmentFile(&args, i));
         alignments[i] -> copy_order(init_alignment.contig_cache);
@@ -85,17 +85,17 @@ int main(int argc, char const ** argv) {
         do {
             // populate dispatch queue with necessary jobs
             while (i < n) {
-                call_queue.dispatch([&, i]{alignments[i] -> launch();}); // dispatch job
+                call_queue.dispatch([&, i] {alignments[i] -> launch();}); // dispatch job
                 i++;
             }
 
-        // Wait for queue to be emptied
+            // Wait for queue to be emptied
         } while (!call_queue.finished());
     }
 
 
     std::unique_lock<std::mutex> main_lock(main_mut);   // lock main thread
-    main_cv.wait(main_lock, []{return MAIN_THREAD;});   // wait for thread_queue destructor to let us go
+    main_cv.wait(main_lock, [] {return MAIN_THREAD;});  // wait for thread_queue destructor to let us go
     main_lock.unlock();                                 // unlock thread
 
     // replace with struct for christ sake
@@ -112,13 +112,13 @@ int main(int argc, char const ** argv) {
 
     for (int i = 0; i < n; i++) {
         alignments[i] -> print_genes();
-        total_ambiguous += alignments[i] -> ambiguous_reads; 
-        total_unique += alignments[i] -> unique_reads; 
+        total_ambiguous += alignments[i] -> ambiguous_reads;
+        total_unique += alignments[i] -> unique_reads;
         total_multimapping += alignments[i] -> multimapped_reads;
         total_no_feature += alignments[i] -> unassigned_reads;
-        total_reads += alignments[i] -> total_reads;     
+        total_reads += alignments[i] -> total_reads;
     }
-    
+
     std::cout << "__unique\t" << total_unique << "\n";
     std::cout << "__ambiguous\t" << total_ambiguous << "\n";
     std::cout << "__multimapping\t" << total_multimapping << "\n";
@@ -131,19 +131,19 @@ int main(int argc, char const ** argv) {
         std::cerr << "[...Output GTFs...]\n";
         std::ofstream newFile;
         newFile.open(args.gtf_output);
-        for (const auto &align: alignments) {
+        for (const auto &align : alignments) {
             align -> print_gtf();
         }
     }
 
 
-	// The most complicated line of "get the time" I have ever seen. 
-    auto stop = std::chrono::high_resolution_clock::now(); 
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start); 
+    // The most complicated line of "get the time" I have ever seen.
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start);
 
     // Say goodbye :)
     std::cerr << "[Program Complete!]\n";
-    std::cerr << "[Runtime: " << duration.count() << " seconds]\n";  
+    std::cerr << "[Runtime: " << duration.count() << " seconds]\n";
 
     return 0;
 }

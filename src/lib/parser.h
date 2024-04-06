@@ -1,23 +1,23 @@
 #include <seqan/arg_parse.h>
 
-/////////////////////////////////////// 
+///////////////////////////////////////
 // Arguments Data Structure
 struct ImpactArguments {
 
     // Files
-    std::string alignment_file;    	    // sam or bam file
-    std::string index_file;    			// index filed
-    std::string annotation_file;      	// gff or gtf file
+    std::string alignment_file;         // sam or bam file
+    std::string index_file;             // index filed
+    std::string annotation_file;        // gff or gtf file
 
     // Program
     int threads;                        // threads
     std::string library_type;           // library type (SE or PE)
     std::string stranded;               // strandedness
-    
+
     // Alignments
-    bool nonunique_alignments;			// count primary and secondary alignments
-    int mapq;						    // minimum mapq score
-    //int min_coverage;					// min coverage
+    bool nonunique_alignments;          // count primary and secondary alignments
+    int mapq;                           // minimum mapq score
+    //int min_coverage;                 // min coverage
 
     // Features
     bool isGFF = false;                 // annotaiton file is gff
@@ -31,46 +31,46 @@ struct ImpactArguments {
 
 // Argument Parser
 seqan::ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactArguments &args) {
-	
+
     // Setup ArgumentParser.
     seqan::ArgumentParser parser("impact");
-    seqan::addDescription(parser, 
-                   "Identifies expressed transcripts using clusters of mapped reads from TAGseq experiments.Generates a counts file written to stdout and optionally a GTF file of identified read clusters.");
+    seqan::addDescription(parser,
+                          "Identifies expressed transcripts using clusters of mapped reads from TAGseq experiments.Generates a counts file written to stdout and optionally a GTF file of identified read clusters.");
 
 
     // Define Arguments
     seqan::addArgument(parser, seqan::ArgParseArgument(
-        seqan::ArgParseArgument::INPUT_FILE, "BAM"));
+                           seqan::ArgParseArgument::INPUT_FILE, "BAM"));
     seqan::addArgument(parser, seqan::ArgParseArgument(
-        seqan::ArgParseArgument::INPUT_FILE, "GTF"));
+                           seqan::ArgParseArgument::INPUT_FILE, "GTF"));
 
 
     // Define Options
     seqan::addOption(parser, seqan::ArgParseOption(
-        "t", "threads",
-        "Number of processes for multithreading.",
-        seqan::ArgParseArgument::INTEGER, "INT"));
+                         "t", "threads",
+                         "Number of processes for multithreading.",
+                         seqan::ArgParseArgument::INTEGER, "INT"));
     seqan::setDefaultValue(parser, "threads", "1");
 
     seqan::addOption(parser, seqan::ArgParseOption(
-        "l", "library-type", "Library type. Paired end is not recommended. Only used to check proper pairing.",
-        seqan::ArgParseArgument::STRING, "STRING"));
+                         "l", "library-type", "Library type. Paired end is not recommended. Only used to check proper pairing.",
+                         seqan::ArgParseArgument::STRING, "STRING"));
     seqan::setDefaultValue(parser, "library-type", "single");
     seqan::setValidValues(parser, "library-type", "single paired");
 
     seqan::addOption(parser, seqan::ArgParseOption(
-        "s", "strandedness", "Strandedness of library.",
-        seqan::ArgParseArgument::STRING, "STRING"));
+                         "s", "strandedness", "Strandedness of library.",
+                         seqan::ArgParseArgument::STRING, "STRING"));
     seqan::setDefaultValue(parser, "strandedness", "forward");
     seqan::setValidValues(parser, "strandedness", "forward reverse");
 
     seqan::addOption(parser, seqan::ArgParseOption(
-        "n", "nonunique-alignments", "Count primary and secondary read alignments."));
+                         "n", "nonunique-alignments", "Count primary and secondary read alignments."));
 
     seqan::addOption(parser, seqan::ArgParseOption(
-        "q", "mapq-min",
-        "Minimum mapping quality score to consider for counts.",
-        seqan::ArgParseArgument::INTEGER, "INT"));
+                         "q", "mapq-min",
+                         "Minimum mapping quality score to consider for counts.",
+                         seqan::ArgParseArgument::INTEGER, "INT"));
     seqan::setDefaultValue(parser, "mapq-min", "1");
 
     // addOption(parser, ArgParseOption(
@@ -80,18 +80,18 @@ seqan::ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactA
     // setDefaultValue(parser, "min-coverage", "10");
 
     seqan::addOption(parser, seqan::ArgParseOption(
-        "f", "feature-tag", "Name of feature tag.",
-        seqan::ArgParseArgument::STRING, "STRING"));
+                         "f", "feature-tag", "Name of feature tag.",
+                         seqan::ArgParseArgument::STRING, "STRING"));
     seqan::setDefaultValue(parser, "feature-tag", "exon");
 
     seqan::addOption(parser, seqan::ArgParseOption(
-        "i", "feature-id", "ID of feature (use for GFFs).",
-        seqan::ArgParseArgument::STRING, "STRING"));
+                         "i", "feature-id", "ID of feature (use for GFFs).",
+                         seqan::ArgParseArgument::STRING, "STRING"));
     seqan::setDefaultValue(parser, "feature-id", "gene_id");
 
     seqan::addOption(parser, seqan::ArgParseOption(
-        "o", "output-gtf", "Output read cluster GTF file and specify name.",
-        seqan::ArgParseArgument::STRING, "STRING"));
+                         "o", "output-gtf", "Output read cluster GTF file and specify name.",
+                         seqan::ArgParseArgument::STRING, "STRING"));
 
     seqan::addUsageLine(parser, "input.sorted.bam annotation.gtf [options]");
     seqan::setDefaultValue(parser, "version-check", "OFF");
@@ -103,8 +103,8 @@ seqan::ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactA
 
     // Check if Parse was successful
     if (res != seqan::ArgumentParser::PARSE_OK) { return seqan::ArgumentParser::PARSE_ERROR; }
-   
-   // Check file type of first positional arg
+
+    // Check file type of first positional arg
     std::string input_file_ext = seqan::getFileExtension(getArgument(parser, 0));
     if (input_file_ext != "bam") {
         std::cerr << "ERROR: Unaccapetd File Format: \"." << input_file_ext <<  "\". Only accepts \".bam\",  extension.\n";
@@ -125,7 +125,7 @@ seqan::ArgumentParser::ParseResult argparse(int argc, char const **argv, ImpactA
     seqan::getArgumentValue(args.annotation_file, parser, 1);
     seqan::getArgumentValue(args.index_file, parser, 0);
     args.index_file = args.index_file + ".bai";
-    
+
     // Populate options
     seqan::getOptionValue(args.threads, parser, "threads");
     seqan::getOptionValue(args.library_type, parser, "library-type");

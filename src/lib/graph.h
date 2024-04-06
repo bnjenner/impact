@@ -21,7 +21,7 @@ class Alignmnet_Graph {
 		Alignmnet_Graph() {}
 
 		// Initialize empty object
-		void initialize(int ref_num, std::string ref_name, const ImpactArguments *args) {
+		void initialize(const int ref_num, const std::string ref_name, const ImpactArguments *args) {
 			ref = ref_num;
 			contig_name = ref_name;
 			parameters = args;
@@ -95,6 +95,7 @@ class Alignmnet_Graph {
 				total_reads ++;
 
 				if (alignment.IsDuplicate()) { continue; }
+
 				if (!alignment.IsMapped()) { continue; }
 
 				uint16_t NH_tag;
