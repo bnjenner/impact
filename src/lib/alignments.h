@@ -4,26 +4,26 @@ class AlignmentFile {
 
 public:
 
+	// Program Parameters
+	const ImpactArguments *parameters; 	  // parameters struct (found in parser.h)
+
+	// Alignment Parameters
 	BamTools::BamReader inFile;		   	  // Bam File Object
 	BamTools::BamAlignment alignment;	  // BamAlignmentRecord record;
 	Alignmnet_Graph graph;				  // Graph for clusters
 	AnnotationFile annotation;			  // copy of annotation (must be copied)
-
-	const ImpactArguments *parameters; 	  // parameters struct (found in parser.h)
-
 	std::string alignment_file_name;	  // alignment file
 	std::string index;				  	  // alignment index file
-
 	BamTools::RefVector references;
-	int chr_num;
 	std::unordered_map<int, std::string> contig_cache;
+	int chr_num;
 
 	// Read Statistics
-	int total_reads = 0;
-	int ambiguous_reads = 0;
-	int unique_reads = 0;
-	int multimapped_reads = 0;
-	int unassigned_reads = 0;
+	size_t total_reads = 0;
+	size_t ambiguous_reads = 0;
+	size_t unique_reads = 0;
+	size_t multimapped_reads = 0;
+	size_t unassigned_reads = 0;
 
 	// Empty
 	AlignmentFile() {};
@@ -86,7 +86,7 @@ public:
 	}
 
 	// copy annotation (point to it)
-	void copy_annotation(const AnnotationFile &init_annotation, int temp_chr_num) {
+	void copy_annotation(const AnnotationFile &init_annotation, const int temp_chr_num) {
 		annotation = init_annotation;
 		annotation.chrom = contig_cache[temp_chr_num];
 	}
@@ -286,10 +286,10 @@ public:
 							}
 
 							assigned = true;
-							curr_clust -> assigned = 1;
+							curr_clust -> unassigned = !assigned;
 
 							// if not ambigous, assign reads to gene
-							if (curr_clust -> ambiguous == 0) {
+							if (!(curr_clust -> ambiguous)) {
 								curr_gene -> read_count += curr_clust -> read_count;
 								unique_reads += curr_clust -> read_count;
 							} else {

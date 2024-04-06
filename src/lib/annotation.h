@@ -149,10 +149,10 @@ public:
 			if (line.find_first_of('#') != 0) { 
 				parse_annotation_line(line, columns);
 
-				if (columns[2] == feature_tag) {	// if correct type
+				if (columns.at(2).compare(feature_tag) == 0) {	// if correct type
 
 					tags.clear();
-					parse_annotation_tags(columns[8], tags, isGFF);
+					parse_annotation_tags(columns.at(8), tags, isGFF);
 
 					// get id (index is useful here)
 					for (int i = 0; i < tags.size(); i++) {
@@ -168,24 +168,24 @@ public:
 						throw "ERROR: Could not identify Feature ID.";
 					}
 
+					begin = std::stoi(columns.at(3)) - 1;
+					end = std::stoi(columns.at(4)) - 1;
+
 					// if new feature
 					if (temp_id.compare(curr_id) != 0) {
 
 						curr_id = temp_id;
 
 						if (stranded.compare("reverse") == 0) {
-							temp_strand = 1 - ((columns[6] == "+") ? 0 : 1);
+							temp_strand = 1 - ((columns.at(6) == "+") ? 0 : 1);
 						} else {
-							temp_strand = (columns[6] == "+") ? 0 : 1;
+							temp_strand = (columns.at(6) == "+") ? 0 : 1;
 						}
-
-						begin = std::stoi(columns[3]) - 1;
-						end = std::stoi(columns[4]) - 1;
 
 						Node *new_node = new Node(temp_id,
 						                          temp_strand,
 						                          begin, end,
-						                          columns[0]);
+						                          columns.at(0));
 
 						// if first node
 						if (curr_node == NULL) {
@@ -202,8 +202,6 @@ public:
 
 
 					} else {
-						begin = std::stoi(columns[3]) - 1;
-						end = std::stoi(columns[4]) - 1;
 						curr_node -> modify_cluster(begin, end, 0);
 					}
 

@@ -2,272 +2,269 @@
 // Graph Class (really just a doubly linked list)
 class Alignmnet_Graph {
 
-	public:
+public:
 
-		int ref; 
-		std::string contig_name;
-		const ImpactArguments *parameters;
+	// Program Parameters
+	const ImpactArguments *parameters;	 	// parameters struct (found in parser.h)
 
-		Node *head = NULL;
-		Node *tail = NULL;
-		Node temp;
+	// Alignment Graph Vars
+	int chr_num = -1;						// chromosome number in index
+	uint16_t NH_tag;						// NH tag to determine number of mappings
+	std::string contig_name;				// name of contig
 
-		// graph-specific parameters
-		int num_nodes = 0;
-		int multimapped_reads = 0;
-		int total_reads = 0;
+	// Links
+	Node *head;
+	Node *tail;
+	Node temp;
 
-		// Empty
-		Alignmnet_Graph() {}
+	// Summary
+	size_t multimapped_reads = 0;
+	size_t total_reads = 0;
 
-		// Initialize empty object
-		void initialize(const int ref_num, const std::string ref_name, const ImpactArguments *args) {
-			ref = ref_num;
-			contig_name = ref_name;
-			parameters = args;
-		}		
+	// Empty
+	Alignmnet_Graph() {}
 
-		// Set Head
-		int set_head(BamTools::BamReader &inFile, BamTools::BamAlignment &alignment) {
+	// Initialize empty object
+	void initialize(const int ref_num, const std::string ref_name, const ImpactArguments *args) {
+		chr_num = ref_num;
+		contig_name = ref_name;
+		parameters = args;
+	}
 
-			while (true) {
+	// Set Head
+	int set_head(BamTools::BamReader &inFile, BamTools::BamAlignment &alignment) {
 
-				if (!inFile.GetNextAlignment(alignment)) { return 0; }
-				if (alignment.RefID > ref) { return 0; }
+		while (true) {
 
-				total_reads ++;
+			if (!inFile.GetNextAlignment(alignment)) { return 0; }
+			if (alignment.RefID > chr_num) { return 0; }
 
-				if (alignment.IsDuplicate()) { continue; }
-				if (!alignment.IsMapped()) { continue; }
+			total_reads ++;
 
-				uint16_t NH_tag;
-				alignment.GetTag("NH", NH_tag);
-				if ((NH_tag > 1) && (parameters -> nonunique_alignments == false)) {
-					multimapped_reads ++;
-					continue;
-				}
+			if (alignment.IsDuplicate()) { continue; }
+			if (!alignment.IsMapped()) { continue; }
 
-				// Exclude secondary alignment 
-				if (!alignment.IsPrimaryAlignment() && (parameters -> nonunique_alignments == false)) {
-					continue;
-				} 
-	
-				// If paired end, check propper pair
-				if (!alignment.IsProperPair() && (parameters -> library_type == "paired")) {
-					continue;
-				}
-
-				if (alignment.MapQuality < parameters -> mapq) {
-		       		continue;
-				}
-
-				break;
+			alignment.GetTag("NH", NH_tag);
+			if ((NH_tag > 1) && (!(parameters -> nonunique_alignments))) {
+				multimapped_reads ++;
+				continue;
 			}
 
-			// Add alignment to head node
-			temp = Node(alignment, ref);
-			temp.ishead = 1;
-			head = &temp;
+			// Exclude secondary alignment
+			if (!alignment.IsPrimaryAlignment() && (!(parameters -> nonunique_alignments))) {
+				continue;
+			}
 
-			return 1;
+			// If paired end, check propper pair
+			if (!alignment.IsProperPair() && ((parameters -> library_type).compare("paired") == 0)) {
+				continue;
+			}
 
+			if (alignment.MapQuality < parameters -> mapq) {
+				continue;
+			}
+
+			break;
 		}
 
-		// Create clusters of overlapping reads
-		void create_clusters(BamTools::BamReader &inFile, BamTools::BamAlignment &alignment) {
+		// Add alignment to head node
+		temp = Node(alignment, chr_num);
+		temp.ishead = true;
+		head = &temp;
 
-			int regions;
-			int temp_start; 	// used to kill one of loops below
-			int temp_strand;
-			int sub_total = 1;
-			std::vector<int> temp_vec = {-1, -1};
+		return 1;
 
-			Node *curr_node;
-			tail = head;
+	}
 
-			while (true) {
+	// Create clusters of overlapping reads
+	void create_clusters(BamTools::BamReader &inFile, BamTools::BamAlignment &alignment) {
 
-				curr_node = tail;
+		int temp_start; 	// used to kill one of loops below
+		int temp_strand;
+		size_t regions;
+		size_t sub_total = 1;
+		std::vector<int> temp_vec = { -1, -1};
 
-				if (!inFile.GetNextAlignment(alignment)) { break; }
-				if (alignment.RefID > ref) { break; }
+		Node *curr_node;
+		tail = head;
 
-				total_reads ++;
+		while (true) {
 
-				if (alignment.IsDuplicate()) { continue; }
+			curr_node = tail;
 
-				if (!alignment.IsMapped()) { continue; }
+			if (!inFile.GetNextAlignment(alignment)) { break; }
+			if (alignment.RefID > chr_num) { break; }
 
-				uint16_t NH_tag;
-				alignment.GetTag("NH", NH_tag);
-				if ((NH_tag > 1) && (parameters -> nonunique_alignments == false)) {
-					multimapped_reads ++;
-					continue;
-				}
+			total_reads ++;
 
-				// Exclude secondary alignments
-				if (!alignment.IsPrimaryAlignment() && (parameters -> nonunique_alignments == false)) {
-					continue;
-				}
+			if (alignment.IsDuplicate()) { continue; }
 
-				// If paired end, check propper pair
-				if (!alignment.IsProperPair() && (parameters -> library_type == "paired")) {
-					continue;
-				}
+			if (!alignment.IsMapped()) { continue; }
 
-				if (alignment.MapQuality < parameters -> mapq) {
-		       		continue;
-				}
+			alignment.GetTag("NH", NH_tag);
+			if ((NH_tag > 1) && (parameters -> nonunique_alignments == false)) {
+				multimapped_reads ++;
+				continue;
+			}
 
-				sub_total += 1;
+			// Exclude secondary alignment
+			if (!alignment.IsPrimaryAlignment() && (!(parameters -> nonunique_alignments))) {
+				continue;
+			}
 
-				temp_vec = {alignment.Position, -1};
-				temp_start = temp_vec[0];
-				temp_strand = alignment.IsReverseStrand();
+			// If paired end, check propper pair
+			if (!alignment.IsProperPair() && ((parameters -> library_type).compare("paired") == 0)) {
+				continue;
+			}
 
-				curr_node -> calculate_splice(alignment, temp_vec);
-				regions = temp_vec.size() / 2;
+			if (alignment.MapQuality < parameters -> mapq) {
+				continue;
+			}
 
-				// check if alignment represents a new node (past first subcluster)
-				if ((temp_vec[0] > curr_node -> clust_vec[1]) || (temp_strand != curr_node -> strand)) {
+			sub_total += 1;
 
-					Node *new_node = new Node(alignment, temp_vec, ref);
+			temp_vec = {alignment.Position, -1};
+			temp_start = temp_vec[0];
+			temp_strand = alignment.IsReverseStrand();
 
-					curr_node -> set_next(new_node);
-					new_node -> set_prev(curr_node);
-					curr_node = new_node;
-					tail = curr_node;
-					continue;
-				}
+			curr_node -> calculate_splice(alignment, temp_vec);
+			regions = temp_vec.size() / 2;
 
-				// find overlapping region
-				while ((curr_node != NULL) && (temp_start != -1))  {
+			// check if alignment represents a new node (past first subcluster)
+			if ((temp_vec[0] > curr_node -> clust_vec[1]) || (temp_strand != curr_node -> strand)) {
 
-					for (int x = 0; x < regions; x++) {
+				Node *new_node = new Node(alignment, temp_vec, chr_num);
 
-						// Check if alignment overlaps with previous nodes
-						if (curr_node -> check_overlap(temp_vec[(2 * x)], temp_vec[(2 * x) + 1], temp_strand)) {
+				curr_node -> set_next(new_node);
+				new_node -> set_prev(curr_node);
+				curr_node = new_node;
+				tail = curr_node;
+				continue;
+			}
 
-							// add all clusters to vector
-							for (int y = 0; y < regions; y++) {
-								curr_node -> modify_cluster(temp_vec[(2 * y)], temp_vec[(2 * y) + 1], 1);
-							}
+			// find overlapping region
+			while ((curr_node != NULL) && (temp_start != -1))  {
 
-							curr_node -> read_count++;
-							temp_start = -1;
-							break;
-						}	
+				for (int x = 0; x < regions; x++) {
+
+					// Check if alignment overlaps with previous nodes
+					if (curr_node -> check_overlap(temp_vec[(2 * x)], temp_vec[(2 * x) + 1], temp_strand)) {
+
+						// add all clusters to vector
+						for (int y = 0; y < regions; y++) {
+							curr_node -> modify_cluster(temp_vec[(2 * y)], temp_vec[(2 * y) + 1], 1);
+						}
+
+						curr_node -> read_count++;
+						temp_start = -1;
+						break;
 					}
-					curr_node = curr_node -> prev;
 				}
+				curr_node = curr_node -> prev;
 			}
-			return;
 		}
+		return;
+	}
 
-		// print clusters in graph
-		void collapse_graph() {
+	// print clusters in graph
+	void collapse_graph() {
 
-			Node *curr_node = head;
-			Node *next_node = NULL;
-			Node *temp_node = NULL;
-			Node *inter_node = NULL;
+		Node *curr_node = head;
+		Node *next_node = NULL;
+		Node *temp_node = NULL;
+		Node *inter_node = NULL;
 
-			// throw away variables, function only takes references :( will work on this
-			int t_start;
-			int t_stop;
-			int t_strand;
-			int t_overlap;
-			int t_restart;
+		// throw away variables, function only takes references :( will work on this
+		int t_start;
+		int t_stop;
+		int t_strand;
+		int t_overlap;
+		int t_restart;
 
-			while (curr_node != NULL) {
+		while (curr_node != NULL) {
 
-				next_node = curr_node -> next;
-				temp_node = curr_node -> next;
-				t_restart = 0;
-	
-				while (true) {
+			next_node = curr_node -> next;
+			temp_node = curr_node -> next;
+			t_restart = 0;
 
-					if ((temp_node == NULL) || 
-						(temp_node -> get_start() > curr_node -> get_stop())) {
-						if (t_restart == 0) {
+			while (true) {
+
+				if ((temp_node == NULL) ||
+				        (temp_node -> get_start() > curr_node -> get_stop())) {
+					if (t_restart == 0) {
+						break;
+					}
+
+					t_restart = 0;
+					temp_node = curr_node;
+
+				} else {
+
+					t_strand = temp_node -> strand;
+					t_overlap = 0;
+
+					for (int x = 0; x < temp_node -> clust_count; x++) {
+
+						t_start = temp_node -> clust_vec[(x * 2)];
+						t_stop = temp_node -> clust_vec[(x * 2) + 1];
+
+						if (curr_node -> check_overlap(t_start, t_stop, t_strand) == 1) {
+							t_overlap = 1;
 							break;
 						}
 
-						t_restart = 0;
-						temp_node = curr_node;
+					}
 
-					} else {
+					if (t_overlap == 1) {
 
-						t_strand = temp_node -> strand;
-						t_overlap = 0;
+						t_restart = 1;
 
 						for (int x = 0; x < temp_node -> clust_count; x++) {
-
 							t_start = temp_node -> clust_vec[(x * 2)];
 							t_stop = temp_node -> clust_vec[(x * 2) + 1];
-
-							if (curr_node -> check_overlap(t_start, t_stop, t_strand) == 1) {
-								t_overlap = 1;
-								break;
-							}
-						
+							curr_node -> modify_cluster(t_start, t_stop, temp_node -> count_vec[x]);
 						}
 
-						if (t_overlap == 1) {
+						curr_node -> read_count += temp_node -> read_count;
 
-							t_restart = 1;
+						if ((temp_node -> next) != NULL) {
+							(temp_node -> next) -> set_prev(temp_node -> prev);
+						}
 
-							for (int x = 0; x < temp_node -> clust_count; x++) {
-								t_start = temp_node -> clust_vec[(x * 2)];
-								t_stop = temp_node -> clust_vec[(x * 2) + 1];
-								curr_node -> modify_cluster(t_start, t_stop, temp_node -> count_vec[x]);
-							}
+						(temp_node -> prev) -> set_next(temp_node -> next);
+						inter_node = temp_node -> prev;
 
-							curr_node -> read_count += temp_node -> read_count;
+						if (temp_node == next_node) {
+							next_node = temp_node -> next;
+						}
 
-							if ((temp_node -> next) != NULL) {
-								(temp_node -> next) -> set_prev(temp_node -> prev);
-							} 
-
-							(temp_node -> prev) -> set_next(temp_node -> next);	
-							inter_node = temp_node -> prev;
-							
-							if (temp_node == next_node) {
-								next_node = temp_node -> next;
-							}
-
-							delete temp_node;
-							temp_node = inter_node;
-						}						
+						delete temp_node;
+						temp_node = inter_node;
 					}
-
-					temp_node = temp_node -> next;	
 				}
 
-				curr_node = next_node;
-			}
-		}
-
-		// print clusters in graph
-		void print_graph() {
-
-			int gene_count = 1;
-			int printed;
-
-			Node *curr_node = head;
-
-			while (curr_node != NULL) {
-
-				printed = curr_node -> print_cluster(contig_name, parameters, gene_count);
-				curr_node -> printed = 1;
-
-				if (printed == 1) {
-					gene_count ++;
-				}
-				
-				curr_node = curr_node -> next;
+				temp_node = temp_node -> next;
 			}
 
+			curr_node = next_node;
 		}
+	}
 
+	// print clusters in graph
+	void print_graph() {
+
+		int gene_count = 1;
+		int printed;
+
+		Node *curr_node = head;
+
+		while (curr_node != NULL) {
+
+			printed = curr_node -> print_cluster(contig_name, parameters, gene_count);
+			curr_node -> printed = true;
+			curr_node = curr_node -> next;
+
+			if (printed == 1) { gene_count++; }
+		}
+	}
 };
