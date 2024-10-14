@@ -1,5 +1,6 @@
 # IMPACT
-# IN DEVELOPMENT
+
+This project is no longer in development, but instead being replaced by a more sophisticated algorithm (IMPAQT) that is currently in development. This repository remains so that those referencing my Undergraduate Thesis have the code available. 
 
 ## Introduction
 
